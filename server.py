@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""PlacCric local server: python3 server.py --port 8000
+"""PlacCric server: python3 server.py --port 8000
 
-Serves the browser UI and JSON API on 127.0.0.1 only. It never migrates, seeds or resets the
-database; run `python3 -m app.cli db-upgrade` and `python3 -m app.cli seed` explicitly.
+Configuration comes from environment variables (see .env.example). By default it binds to
+127.0.0.1 only. It never migrates, seeds or resets the database; run
+`python3 -m app.cli db-upgrade` and `python3 -m app.cli seed` explicitly.
 """
 import argparse
 import os
@@ -22,11 +23,11 @@ from app.main import create_app
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--port', type=int, default=8000)
+    parser.add_argument('--port', type=int, help='listen port (default: PLACCRIC_PORT or 8000)')
     parser.add_argument('--reset-pin', action='store_true', help='set a new interim PIN and revoke sessions')
     args = parser.parse_args()
     try:
-        settings = get_settings()
+        settings = get_settings(port=args.port)
     except ConfigError as e:
         sys.exit(str(e))
     engine = make_engine(settings.database_url)
@@ -42,7 +43,11 @@ def main():
     with engine.connect() as db:
         need_pin = args.reset_pin or not pin.configured(db)
     if need_pin:
-        value = os.environ.get('PLACCRIC_PIN') or prompt_pin()
+        value = os.environ.get('PLACCRIC_PIN')
+        if not value and not sys.stdin.isatty():
+            sys.exit('No PIN is configured. Set one interactively first: python3 -m app.cli set-pin '
+                     '(with Docker: docker compose run --rm app python -m app.cli set-pin)')
+        value = value or prompt_pin()
         try:
             with engine.begin() as db:
                 pin.set_pin(db, value)
@@ -52,13 +57,15 @@ def main():
             print('PIN updated. Existing sessions ended.')
             return
 
-    hosts = [f'localhost:{args.port}', f'127.0.0.1:{args.port}']
-    app = create_app(engine, hosts, settings.database_url, secure_cookies=settings.environment == 'production')
-    print(f'PlacCric running at http://localhost:{args.port} (Ctrl+C to stop)', flush=True)
+    app = create_app(engine, settings.allowed_hosts, settings.database_url, secure_cookies=settings.cookie_secure)
+    print(f'PlacCric listening on {settings.host}:{settings.port} ({settings.environment}); '
+          f'allowed hosts: {", ".join(settings.allowed_hosts)}', flush=True)
+    proxy = {'proxy_headers': True, 'forwarded_allow_ips': settings.forwarded_allow_ips} if settings.forwarded_allow_ips \
+        else {'proxy_headers': False}
     try:
-        uvicorn.run(app, host='127.0.0.1', port=args.port, log_level='warning', server_header=False)
+        uvicorn.run(app, host=settings.host, port=settings.port, log_level='warning', server_header=False, **proxy)
     except OSError:
-        sys.exit(f'Port {args.port} is already in use. Stop the other server with Ctrl+C, then run again.')
+        sys.exit(f'Port {settings.port} is already in use. Stop the other server with Ctrl+C, then run again.')
     print('\nPlacCric stopped.')
 
 

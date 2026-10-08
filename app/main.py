@@ -1,4 +1,6 @@
 """FastAPI application factory. Creating the app never migrates, seeds or resets the database."""
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
@@ -33,7 +35,8 @@ def create_app(engine, allowed_hosts, database_url=None, secure_cookies=False):
 
     @app.middleware('http')
     async def guard(request: Request, call_next):
-        if request.headers.get('host', '') not in allowed:
+        # Health probes carry no data and may come from container tooling with any Host header.
+        if request.url.path not in ('/healthz', '/readyz') and request.headers.get('host', '') not in allowed:
             response = error(403, 'Invalid host')
         else:
             response = await call_next(request)
@@ -74,7 +77,7 @@ def create_app(engine, allowed_hosts, database_url=None, secure_cookies=False):
 
     @app.get('/healthz')
     def healthz():
-        return {'status': 'ok'}
+        return {'status': 'ok', 'version': os.environ.get('PLACCRIC_VERSION', 'dev')}
 
     @app.get('/readyz')
     def readyz():

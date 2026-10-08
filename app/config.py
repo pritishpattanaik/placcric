@@ -53,11 +53,37 @@ def redact_url(url):
 class Settings:
     database_url: str
     environment: str = 'development'
+    host: str = '127.0.0.1'
+    port: int = 8000
+    allowed_hosts: tuple = ()
+    forwarded_allow_ips: str = ''
+    cookie_secure: bool = False
 
 
-def get_settings():
+def flag(name, default):
+    value = os.environ.get(name, '').strip().lower()
+    if not value:
+        return default
+    if value in ('1', 'true', 'yes', 'on'):
+        return True
+    if value in ('0', 'false', 'no', 'off'):
+        return False
+    raise ConfigError(f'{name} must be true or false.')
+
+
+def get_settings(port=None):
+    """Read settings from the environment. `port` (from --port) overrides PLACCRIC_PORT."""
     load_env_file()
     environment = os.environ.get('PLACCRIC_ENV', 'development')
     if environment not in ENVIRONMENTS:
         raise ConfigError(f'PLACCRIC_ENV must be one of {", ".join(ENVIRONMENTS)}.')
-    return Settings(database_url=normalise_database_url(os.environ.get('DATABASE_URL')), environment=environment)
+    try:
+        port = int(port or os.environ.get('PLACCRIC_PORT') or 8000)
+    except ValueError:
+        raise ConfigError('PLACCRIC_PORT must be a number.')
+    hosts = tuple(h.strip() for h in os.environ.get('PLACCRIC_ALLOWED_HOSTS', '').split(',') if h.strip())
+    return Settings(database_url=normalise_database_url(os.environ.get('DATABASE_URL')), environment=environment,
+                    host=os.environ.get('PLACCRIC_HOST', '127.0.0.1').strip() or '127.0.0.1', port=port,
+                    allowed_hosts=hosts or (f'localhost:{port}', f'127.0.0.1:{port}'),
+                    forwarded_allow_ips=os.environ.get('PLACCRIC_FORWARDED_ALLOW_IPS', '').strip(),
+                    cookie_secure=flag('PLACCRIC_COOKIE_SECURE', environment == 'production'))

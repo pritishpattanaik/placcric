@@ -56,7 +56,8 @@ class HttpTests(PostgresTestCase):
         self.assertEqual((r.status_code, r.json()), (403, {'error': 'Invalid host'}))
 
     def test_health_and_readiness(self):
-        self.assertEqual(self.client.get('/healthz').json(), {'status': 'ok'})
+        self.assertEqual(self.client.get('/healthz').json()['status'], 'ok')
+        self.assertEqual(self.client.get('/healthz', headers={'Host': 'probe.internal'}).status_code, 200)
         r = self.client.get('/readyz')
         self.assertEqual((r.status_code, r.json()['schema']), (200, 'current'))
 

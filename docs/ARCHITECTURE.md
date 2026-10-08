@@ -49,10 +49,14 @@ Supporting modules: `app/config.py` (environment and `.env`), `app/db.py` (engin
 
 ## Security boundary
 
-Loopback binding; exact Host allowlist (`localhost:PORT`, `127.0.0.1:PORT`); CSP without inline scripts; `Cache-Control: no-store`; frame denial; JSON-only POST bodies up to 2 MB with Origin checking; CSRF token on every authenticated POST; session cookies HttpOnly + SameSite=Strict (Secure when `PLACCRIC_ENV=production`). Database passwords are redacted in all CLI and server output.
+Loopback binding by default; exact Host allowlist (default `localhost:PORT`, `127.0.0.1:PORT`; set with `PLACCRIC_ALLOWED_HOSTS`); CSP without inline scripts; `Cache-Control: no-store`; frame denial; JSON-only POST bodies up to 2 MB with Origin checking; CSRF token on every authenticated POST; session cookies HttpOnly + SameSite=Strict (Secure by default when `PLACCRIC_ENV=production`, overridable with `PLACCRIC_COOKIE_SECURE`); `X-Forwarded-*` trusted only from `PLACCRIC_FORWARDED_ALLOW_IPS`. Database passwords are redacted in all CLI and server output.
+
+## Containers and environments
+
+`compose.yaml` defines `db` (postgres:16-bookworm, named volume `pgdata`, published on 127.0.0.1), `app` (built from `Dockerfile`: python:3.12-slim, non-root user, healthcheck on `/healthz`, published on 127.0.0.1), optional `caddy` (profile `https`, automatic Let's Encrypt, the only service on 0.0.0.0) and a `test` profile with an in-memory PostgreSQL. Settings come from `.env`: `PLACCRIC_HOST`, `PLACCRIC_PORT`, `PLACCRIC_ALLOWED_HOSTS`, `PLACCRIC_FORWARDED_ALLOW_IPS` (uvicorn proxy headers, so HTTPS Origin checks and per-client throttling work behind Caddy) and `PLACCRIC_COOKIE_SECURE`. `/healthz` reports the deployed commit (`PLACCRIC_VERSION`, baked in at build time) and is exempt from the Host check for probes. Migrations run as an explicit deploy step (`scripts/deploy.sh`), never from the server process. See docs/DEPLOYMENT.md.
 
 ## Planned
 
 - `app/auth/oidc.py` and role/allowlist tables (M2).
 - Staging, revisions and private raw-upload storage under `app/ingestion/` (M3).
-- Production settings: trusted hosts, HTTPS, proxy headers (M5).
+- Remaining M5 items: manual acceptance checklist, restore drills, monitoring.

@@ -6,7 +6,7 @@ Repository: https://github.com/pritishpattanaik/placcric
 
 ## Status
 
-PlacCric is a local application: a Python backend (FastAPI, SQLAlchemy 2, Alembic) using **PostgreSQL**, plus the existing plain HTML/CSS/JavaScript UI. It is not deployed publicly. Milestones are tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
+PlacCric is a Python backend (FastAPI, SQLAlchemy 2, Alembic) using **PostgreSQL**, plus the existing plain HTML/CSS/JavaScript UI. It runs in Docker Compose (recommended) or a Python virtual environment. It is not deployed publicly. Milestones are tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 | Implemented now | Planned (not yet implemented) |
 | --- | --- |
@@ -18,6 +18,7 @@ PlacCric is a local application: a Python backend (FastAPI, SQLAlchemy 2, Alembi
 | Deterministic, evidence-based coaching rules (no LLM) | CricHeroes adapter — blocked until an authorised export or integration is confirmed |
 | **Interim** single-user PIN login (hashed PIN, server sessions, CSRF, throttling) | PIN login is removed when Google sign-in lands in M2 |
 | Health (`/healthz`) and readiness (`/readyz`) endpoints | Optional LLM coaching — separate future milestone with cost and privacy controls |
+| Docker Compose stack (PostgreSQL 16, app, optional Caddy HTTPS), deploy/backup/restore scripts, GitHub Actions CI | Public internet exposure — only after M2 replaces the PIN |
 
 **Data coverage:** the bundled snapshot contains five completed matches and 15 public club listings, collected on 7 October 2026. It is not a live feed or a complete season. Club listings are not confirmed tournament squads. Scorecard identities use CricHeroes player IDs; names in club listings are never merged with them automatically.
 
@@ -25,7 +26,21 @@ The bundled source has recorded discrepancies, including a KL Stars innings tota
 
 Tournament source: https://cricheroes.com/tournament/2194193/diwhyn-choice-t25-cricket-carnival-season-2/matches/past-matches
 
-## Set up on a Mac (no Docker)
+## Run with Docker Compose (recommended)
+
+Needs Docker with Compose v2 (OrbStack or Docker Desktop on a Mac; Docker Engine on Linux). All configuration is in `.env`.
+
+```bash
+git clone https://github.com/pritishpattanaik/placcric.git && cd placcric
+cp .env.example .env
+sed -i '' "s/CHANGE_ME/$(openssl rand -hex 24)/g" .env   # on Linux: sed -i "s/…/…/g" .env
+scripts/deploy.sh main                                   # build, migrate, set PIN, start
+docker compose run --rm app python -m app.cli seed       # first time only: bundled snapshot
+```
+
+Open http://localhost:8000. The dev → stage (MacBook) → prod (Contabo) workflow, branch model, server setup, HTTPS, backups and rollback are in **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**.
+
+## Alternative: run on a Mac without Docker (venv)
 
 Requirements:
 
@@ -186,12 +201,13 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full description.
 - `web/` — browser UI; no CDN or external fonts.
 - `data/scorecards.json` — bundled snapshot and an example of the import format; `data/rosters.json` — public club listings.
 - `tests/` — validation, PostgreSQL integration, HTTP and migration tests.
+- `Dockerfile`, `compose.yaml`, `deploy/` (Caddyfile, production env template), `scripts/` (deploy, backup, restore), `.github/workflows/ci.yml`.
 
 ### Authentication (interim) and deployment boundary
 
 Until Milestone 2, sign-in uses a single workspace PIN: salted PBKDF2-SHA256 hash, random session tokens stored only as SHA-256 digests, 12-hour expiry, CSRF token on every state-changing request, login throttling (8 attempts per 15 minutes per client), and an HttpOnly, SameSite=Strict cookie. Requests with a Host header other than `localhost:PORT` or `127.0.0.1:PORT` are rejected.
 
-This is a **single-user local application**. Do not expose it to the internet. Public hosting needs HTTPS, Google sign-in with roles (M2) and production configuration (M5). A cloud coding session does not host the app or connect to your Mac's localhost.
+By default the server binds to `127.0.0.1`; in containers it binds inside the container and is published on `127.0.0.1` only. Bind address, allowed hosts, proxy trust and cookie security come from environment variables (see `.env.example`). **Do not expose the PIN-protected app to the internet**: run production privately (SSH tunnel) until Google sign-in with roles (M2) is merged. A cloud coding session does not host the app or connect to your Mac's localhost.
 
 `PLACCRIC_PIN` exists for isolated automated runs. Do not commit a real PIN, `.env`, session, database dump or backup.
 
@@ -225,6 +241,12 @@ The integration tests need a **separate PostgreSQL test database** whose name en
 ```bash
 python3 -m unittest discover -s tests -v
 node --check web/app.js   # if Node is installed
+```
+
+Or, with Docker only (uses a throwaway in-memory PostgreSQL, never your data):
+
+```bash
+docker compose --profile test run --rm --build tests
 ```
 
 Without `TEST_DATABASE_URL` the PostgreSQL tests are reported as skipped; set `PLACCRIC_REQUIRE_PG=1` to make that an error. The tests refuse to run against a database whose name does not end in `_test` or that matches `DATABASE_URL`.

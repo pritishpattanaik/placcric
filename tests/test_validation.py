@@ -1,9 +1,11 @@
 """Pure validation tests; no database required."""
 import copy
 import json
+import os
 import unittest
+from unittest import mock
 
-from app.config import ConfigError, normalise_database_url, redact_url
+from app.config import ConfigError, get_settings, normalise_database_url, redact_url
 from app.ingestion.scorecards import BUNDLED_SCORECARDS, content_hash, overs, overs_to_balls, validate
 
 
@@ -61,6 +63,31 @@ class ConfigTests(unittest.TestCase):
     def test_passwords_are_redacted(self):
         self.assertEqual(redact_url('postgresql+psycopg://u:s3cret@h:5432/db'), 'postgresql+psycopg://u:***@h:5432/db')
         self.assertNotIn('s3cret', redact_url('postgresql://u:s3cret@h/db'))
+
+    def settings(self, **env):
+        base = {'DATABASE_URL': 'postgresql://u@h/db'}
+        with mock.patch.dict(os.environ, dict(base, **env), clear=True), mock.patch('app.config.load_env_file'):
+            return get_settings()
+
+    def test_development_defaults_are_local_only(self):
+        s = self.settings()
+        self.assertEqual((s.host, s.port, s.environment), ('127.0.0.1', 8000, 'development'))
+        self.assertEqual(s.allowed_hosts, ('localhost:8000', '127.0.0.1:8000'))
+        self.assertFalse(s.cookie_secure)
+        self.assertEqual(s.forwarded_allow_ips, '')
+        self.assertEqual(self.settings(PLACCRIC_PORT='9000').allowed_hosts, ('localhost:9000', '127.0.0.1:9000'))
+
+    def test_production_settings_from_environment(self):
+        s = self.settings(PLACCRIC_ENV='production', PLACCRIC_HOST='0.0.0.0',
+                          PLACCRIC_ALLOWED_HOSTS=' placcric.example.com , localhost:8000 ',
+                          PLACCRIC_FORWARDED_ALLOW_IPS='*')
+        self.assertTrue(s.cookie_secure)
+        self.assertEqual(s.allowed_hosts, ('placcric.example.com', 'localhost:8000'))
+        self.assertEqual((s.host, s.forwarded_allow_ips), ('0.0.0.0', '*'))
+        self.assertFalse(self.settings(PLACCRIC_ENV='production', PLACCRIC_COOKIE_SECURE='false').cookie_secure)
+        for bad in ({'PLACCRIC_ENV': 'prod'}, {'PLACCRIC_COOKIE_SECURE': 'maybe'}, {'PLACCRIC_PORT': 'x'}):
+            with self.subTest(bad), self.assertRaises(ConfigError):
+                self.settings(**bad)
 
 
 if __name__ == '__main__':

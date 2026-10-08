@@ -9,7 +9,7 @@ One milestone per branch and pull request. Each PR reports changes, test results
 | M3 — Reliable match ingestion | Planned |
 | CricHeroes adapter | Blocked until an authorised export/integration is confirmed or a sample export is supplied |
 | M4 — UI and analytics | Planned |
-| M5 — Release readiness | Planned |
+| M5 — Release readiness | Partly delivered early: Docker Compose stack, dev/stage/prod workflow, deploy/backup/restore scripts, CI, HTTPS profile, health/readiness. Public exposure waits for M2 |
 | Optional LLM coaching | Future, separate; explicit cost and privacy controls required |
 
 ## Baseline (before M1)
@@ -30,6 +30,8 @@ Delivered:
 - Tests against an isolated PostgreSQL test database: migrations up/down and model parity, constraints, seed idempotency, analytics, atomic imports, HTTP auth/CSRF/guards, and SQLite migration.
 
 Acceptance criteria: all tests pass with `TEST_DATABASE_URL` set; `python3 server.py --port 8000` serves the existing UI from PostgreSQL; the migration of a legacy database reports matching counts and totals and leaves the SQLite file's hash unchanged.
+
+Follow-up delivered on the same PR: Docker Compose deployment (PostgreSQL 16, app, optional Caddy HTTPS), environment-driven server settings, `scripts/deploy.sh|backup.sh|restore.sh`, GitHub Actions CI and docs/DEPLOYMENT.md.
 
 Limitations: authentication is still the interim single PIN; import staging and revisions are M3; the coverage date shown in the UI is still the fixed snapshot date.
 
