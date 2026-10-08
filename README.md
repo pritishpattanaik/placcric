@@ -1,138 +1,238 @@
 # PlacCric
 
-A local cricket analytics dashboard for the **Diwhyn Choice T25 Cricket Carnival — Season 2**, with UCC club views, player profiles, match scorecards, comparisons and captain notes.
+A cricket analytics dashboard for the **Diwhyn Choice T25 Cricket Carnival — Season 2** (CricHeroes tournament 2194193), with UCC club views, player profiles, match scorecards, comparisons and captain notes.
 
 Repository: https://github.com/pritishpattanaik/placcric
 
 ## Status
 
-This package is a working local MVP, built with Python, SQLite and plain HTML/CSS/JavaScript. It is a starting point for further development in Claude Code. It has not been verified against the current contents of the GitHub repository or deployed as a public service.
+PlacCric is a local application: a Python backend (FastAPI, SQLAlchemy 2, Alembic) using **PostgreSQL**, plus the existing plain HTML/CSS/JavaScript UI. It is not deployed publicly. Milestones are tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
 
-| Available now | Planned work |
+| Implemented now | Planned (not yet implemented) |
 | --- | --- |
-| Responsive dashboard, team filters and match details | Browser accessibility and mobile regression tests |
-| Player batting/bowling statistics and comparisons | Scorer-friendly CSV entry and import preview |
-| PIN login, server sessions and persistent captain notes | Multi-user accounts and roles if required |
-| Validated JSON scorecard imports with atomic updates | Provider integration, subject to confirmed access |
-| SQLite persistence and six backend tests | Migration/versioning and stronger ingestion audit trail |
-| Evidence-based coaching rules | Optional LLM coaching with explicit consent and cost limits |
+| PostgreSQL persistence with versioned Alembic migrations (M1) | Google OpenID Connect sign-in, invite allowlist and roles (M2) |
+| Explicit, idempotent seed command; startup never seeds or resets data (M1) | Staged imports with preview, admin approval, revisions and restore (M3) |
+| One-time, verified SQLite → PostgreSQL migration with dry run (M1) | Documented CSV templates for scorer-supplied records (M3) |
+| Validated JSON scorecard imports, applied atomically | UI accessibility/mobile regression testing and coverage display (M4) |
+| Dashboard, match centre, player profiles, team filters, comparison, captain notes | Production configuration, HTTPS, trusted hosts and backup tooling (M5) |
+| Deterministic, evidence-based coaching rules (no LLM) | CricHeroes adapter — blocked until an authorised export or integration is confirmed |
+| **Interim** single-user PIN login (hashed PIN, server sessions, CSRF, throttling) | PIN login is removed when Google sign-in lands in M2 |
+| Health (`/healthz`) and readiness (`/readyz`) endpoints | Optional LLM coaching — separate future milestone with cost and privacy controls |
 
-**Data coverage:** the bundled snapshot contains five completed matches and 15 club roster listings, collected on 7 October 2026. This is not a live feed or a complete season dataset. Club membership lists are not confirmed tournament squads. Player identities from scorecards use CricHeroes player IDs; names in club lists are not automatically merged with them.
+**Data coverage:** the bundled snapshot contains five completed matches and 15 public club listings, collected on 7 October 2026. It is not a live feed or a complete season. Club listings are not confirmed tournament squads. Scorecard identities use CricHeroes player IDs; names in club listings are never merged with them automatically.
 
-The bundled source has recorded discrepancies, including a KL Stars innings total, a DLS match and an unusual batting list. Warnings remain visible. Imported validation establishes numerical consistency, not authenticity. Review the original sources before consequential selection decisions.
+The bundled source has recorded discrepancies, including a KL Stars innings total, a DLS match and an unusual batting list. Their warnings stay visible in the UI. Import validation checks numerical consistency, not authenticity. Review the original sources before consequential selection decisions.
 
 Tournament source: https://cricheroes.com/tournament/2194193/diwhyn-choice-t25-cricket-carnival-season-2/matches/past-matches
 
-## Run on your Mac
+## Set up on a Mac (no Docker)
 
-Requires **Python 3.10 or newer**. No Docker, Node build or third-party Python dependencies are required for this MVP.
+Requirements:
 
-From the directory containing `server.py`:
+- **Python 3.10 or newer** (`python3 --version`).
+- **PostgreSQL 16** (tested with 16.x). Other supported PostgreSQL major versions are expected to work but are not tested.
 
-```bash
-python3 --version
-python3 server.py --port 8000
-```
-
-On first launch, create and confirm your own **6–12 digit PIN** in Terminal. Open http://localhost:8000. Stop the server with `Ctrl+C`.
-
-If using the downloaded package:
+### 1. Install and start PostgreSQL with Homebrew
 
 ```bash
-cd /Users/pritish/Documents/Perosnal/placcric-v2
-python3 server.py --port 8000
+brew install postgresql@16
+brew services start postgresql@16
+# Homebrew does not link versioned formulae; add its tools to PATH (Apple silicon path shown):
+echo 'export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"' >> ~/.zprofile
+source ~/.zprofile
+psql --version
 ```
 
-Once the project is committed to GitHub, a fresh installation is:
+On Intel Macs the prefix is `/usr/local/opt/postgresql@16/bin`. [Postgres.app](https://postgresapp.com/) also works; use its PostgreSQL 16 server and add its `bin` directory to `PATH`.
+
+### 2. Create a role, the application database and a separate test database
+
+Choose your own password; do not reuse it elsewhere.
+
+```bash
+createuser --pwprompt placcric          # enter a new password when prompted
+createdb --owner placcric placcric
+createdb --owner placcric placcric_test # disposable; tests drop and recreate its schema
+```
+
+### 3. Install the Python dependencies
 
 ```bash
 git clone https://github.com/pritishpattanaik/placcric.git
 cd placcric
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Run `source .venv/bin/activate` in each new Terminal window before the commands below.
+
+### 4. Configure the database URL
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and replace `CHANGE_ME` with your password. `.env` is ignored by git; never commit it. Real environment variables take precedence over `.env`. If your password contains `@`, `:`, `/` or `%`, URL-encode it (for example `@` becomes `%40`).
+
+### 5. Create the schema and load the bundled data (explicit, one time)
+
+```bash
+python3 -m app.cli db-upgrade   # apply migrations
+python3 -m app.cli seed         # load bundled club listings and the five-match snapshot
+```
+
+`seed` is idempotent: running it again adds nothing and never overwrites a match that already exists (so later corrections survive). The server never runs migrations or seeding on startup.
+
+If you are upgrading from the SQLite version, **skip `seed`** and follow [Migrating from SQLite](#migrating-from-the-sqlite-version) instead.
+
+### 6. Run on port 8000
+
+```bash
 python3 server.py --port 8000
 ```
 
-The old `python3 -m http.server` command only serves static files. This version needs `server.py` for authentication, database access and imports. Stop any old server occupying port 8000 first.
+On first launch you will be asked to create a **6–12 digit PIN** in Terminal (interim login; see below). Open http://localhost:8000. Stop with `Ctrl+C`. The server binds only to `127.0.0.1`.
 
-Reset a forgotten PIN:
+Reset the interim PIN (revokes existing sessions): `python3 server.py --reset-pin` or `python3 -m app.cli set-pin`.
+
+If the server reports that the schema needs migrating, run `python3 -m app.cli db-upgrade`. If it cannot connect, check that PostgreSQL is running (`brew services list`) and that `DATABASE_URL` is correct. Passwords are never printed.
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `python3 server.py --port 8000` | Run the local app on http://localhost:8000 |
+| `python3 -m app.cli db-upgrade` | Apply Alembic migrations (same as `alembic upgrade head`) |
+| `python3 -m app.cli db-status` | Show current and latest schema revision; exit code 1 if a migration is needed |
+| `python3 -m app.cli db-downgrade REVISION --yes` | Roll the schema back (e.g. `base`). **Drops tables and their data** — back up first |
+| `python3 -m app.cli seed` | Idempotently load bundled data |
+| `python3 -m app.cli migrate-sqlite PATH [--dry-run]` | One-time SQLite → PostgreSQL copy |
+| `python3 -m app.cli set-pin` | Set the interim PIN |
+
+## Migrating from the SQLite version
+
+Earlier versions stored data in `data/placcric.sqlite3`. The migration command copies it into PostgreSQL once.
+
+What it does:
+
+- Opens the SQLite file **read-only** and checks its SHA-256 before and after; the original file is not modified.
+- Copies teams, club listings, players (with CricHeroes IDs), matches, innings, batting, bowling, captain notes and import history, **preserving every ID**.
+- Does **not** copy the PIN hash, sessions, login attempts or internal `meta` rows. You set a new PIN afterwards.
+- Requires a freshly upgraded, **unseeded** PostgreSQL database, and refuses to run if any cricket data is already present (so it cannot be run twice).
+- Runs in a single transaction. Before committing it compares row counts, aggregate totals (runs, balls, wickets, extras, boundaries, dots, wides, no-balls, not-outs) and a content digest of every table. Any mismatch rolls everything back.
+
+Steps:
 
 ```bash
-python3 server.py --reset-pin
+# 1. Stop the old server (Ctrl+C) so the SQLite file is not changing.
+# 2. Keep a copy of the old database and its -wal/-shm files somewhere private, outside git.
+mkdir -p ~/placcric-backups
+cp data/placcric.sqlite3* ~/placcric-backups/
+# 3. Create the schema, but do NOT run seed.
+python3 -m app.cli db-upgrade
+# 4. Verify without writing anything.
+python3 -m app.cli migrate-sqlite data/placcric.sqlite3 --dry-run
+# 5. Migrate for real; the report lists counts and totals per table.
+python3 -m app.cli migrate-sqlite data/placcric.sqlite3
+# 6. Set a new PIN and start the server.
+python3 server.py --port 8000
 ```
 
-This revokes existing sessions. Use the same `--db` argument when resetting a custom database.
+**Recovery.** The SQLite file is left as it was, so you can always start again:
+
+- If the dry run or migration reports an error, nothing was written. Fix the reported problem and re-run.
+- If you want to redo a committed migration, recreate the PostgreSQL database and repeat steps 3–5:
+  ```bash
+  dropdb placcric && createdb --owner placcric placcric
+  python3 -m app.cli db-upgrade
+  python3 -m app.cli migrate-sqlite data/placcric.sqlite3
+  ```
+- To return to the old SQLite app temporarily, check out the last SQLite commit (`511a876`) in a separate directory and run it against your untouched `data/placcric.sqlite3`.
+
+## Backup and restore (PostgreSQL)
+
+Backups contain captain notes and, until M2, the PIN hash and session digests. Keep them private and outside the repository.
+
+```bash
+mkdir -p ~/placcric-backups
+pg_dump --format=custom --file ~/placcric-backups/placcric-$(date +%Y%m%d-%H%M).dump placcric
+```
+
+Restore into an empty database (stop the server first):
+
+```bash
+dropdb placcric && createdb --owner placcric placcric
+pg_restore --no-owner --role=placcric --dbname placcric ~/placcric-backups/placcric-YYYYMMDD-HHMM.dump
+python3 -m app.cli db-status
+```
+
+Test a restore into a scratch database (`createdb placcric_restore_check`) occasionally to confirm your backups work.
 
 ## Architecture
 
-- `server.py`: loopback HTTP server, authenticated API, static assets and startup.
-- `app/database.py`: database initialization, scorecard validation and transactional import.
-- `app/schema.sql`: normalized teams, players, matches, innings, batting, bowling, notes and authentication tables.
-- `app/analytics.py`: aggregates, profiles, match views and deterministic coaching rules.
-- `app/security.py`: PIN hashing, session creation and login throttling.
-- `web/`: browser UI; no CDN or external font dependency.
-- `data/scorecards.json`: initial scorecard snapshot and an example of the supported import format.
-- `data/rosters.json`: club name listings, separate from scorecard player identities.
-- `tests/test_app.py`: database, identity, statistics, authentication and import tests.
-- `CLAUDE.md`: persistent instructions for coding agents.
-- `docs/`: ingestion strategy, cloud handoff and development milestones.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full description.
 
-The runtime database is `data/placcric.sqlite3`, created and seeded on first launch. SQLite uses foreign keys and WAL mode. To choose a different database:
+- `server.py` — local launcher (uvicorn on 127.0.0.1); checks the schema revision and refuses to start if a migration is needed.
+- `app/main.py` — FastAPI app factory, host allowlist, security headers, error format, static files, health/readiness.
+- `app/api/` — JSON API routes and request guards (JSON size limit, origin check, session and CSRF).
+- `app/auth/pin.py` — interim PIN authentication (removed in M2).
+- `app/models.py` — SQLAlchemy models; `migrations/` — Alembic migrations (the only way the schema is created).
+- `app/ingestion/scorecards.py` — scorecard validation, atomic import and idempotent seed.
+- `app/analytics.py` — aggregates, profiles, match views and deterministic coaching rules.
+- `app/sqlite_migration.py` — one-time SQLite import with verification.
+- `app/config.py` — environment configuration (`DATABASE_URL`, `PLACCRIC_ENV`), optional `.env` loading, password redaction.
+- `app/cli.py` — explicit administration commands.
+- `web/` — browser UI; no CDN or external fonts.
+- `data/scorecards.json` — bundled snapshot and an example of the import format; `data/rosters.json` — public club listings.
+- `tests/` — validation, PostgreSQL integration, HTTP and migration tests.
 
-```bash
-python3 server.py --db /absolute/path/placcric.sqlite3 --port 8000
-```
+### Authentication (interim) and deployment boundary
 
-### Authentication and deployment boundary
+Until Milestone 2, sign-in uses a single workspace PIN: salted PBKDF2-SHA256 hash, random session tokens stored only as SHA-256 digests, 12-hour expiry, CSRF token on every state-changing request, login throttling (8 attempts per 15 minutes per client), and an HttpOnly, SameSite=Strict cookie. Requests with a Host header other than `localhost:PORT` or `127.0.0.1:PORT` are rejected.
 
-PINs are salted and hashed with PBKDF2; session tokens are random and hashed at rest. Sessions expire after 12 hours. State-changing authenticated requests require a CSRF token. Login failures are throttled; the session cookie is HttpOnly and SameSite=Strict. The server binds only to `127.0.0.1`.
+This is a **single-user local application**. Do not expose it to the internet. Public hosting needs HTTPS, Google sign-in with roles (M2) and production configuration (M5). A cloud coding session does not host the app or connect to your Mac's localhost.
 
-This is a **single-user local application**. Do not expose this HTTP server directly to the internet. Public hosting requires HTTPS, a production application server, user/role design, secret management, backups and deployment testing. A cloud coding session does not permanently host the app or connect to your Mac's localhost.
-
-`PLACCRIC_PIN` exists for isolated automated tests. Do not commit a real PIN, session, environment file or runtime database. Prefer interactive PIN setup locally.
+`PLACCRIC_PIN` exists for isolated automated runs. Do not commit a real PIN, `.env`, session, database dump or backup.
 
 ## Match data without frequent crawling
 
-**Default: no scheduled crawler and no network calls to CricHeroes during normal dashboard use.** All analytics read local SQLite data.
+**No scheduled crawler, no polling and no CricHeroes requests during dashboard use.** All analytics read the local PostgreSQL database.
 
-1. Have the scorer or tournament organiser provide the finalized scorecard after each match. If an export is available to them, use it; otherwise use an agreed spreadsheet or manually entered record.
-2. Convert that record into the current JSON format and retain its original source and match ID.
-3. Open the dashboard's data/import screen and upload the JSON. Review warnings and totals first. The current importer writes validated records directly; a preview/approval screen is planned.
-4. Correct a match by importing the same match ID again. Scores are replaced transactionally and aggregates are recomputed from stored data.
-5. Ask CricHeroes about authorised tournament data access or a partner feed. Do not assume an undocumented API, webhook or export exists. Build an adapter only after capabilities and permissions are confirmed.
+1. Ask the scorer or tournament organiser for the finalized scorecard after each match.
+2. Convert it into the JSON format below, keeping the original source URL and match ID.
+3. Upload it on the **Data & imports** screen. The importer validates the whole file first and writes it atomically; a staged preview and admin approval step is planned for M3.
+4. Correct a match by importing the same match ID again. Its scores are replaced in one transaction; statistics are not duplicated. Each import is logged with a SHA-256 content hash.
 
-Read [the data strategy](docs/DATA_INGESTION.md) for alternatives and the intended import workflow. Screenshots/PDFs can be transcription inputs in a future workflow, but extracted numbers must be reviewed before becoming verified data. General cricket APIs should not be assumed to cover this local tournament.
+You have CricHeroes Pro, but no official documentation reviewed so far shows that Pro (or organiser access) includes an API or a bulk data export. See [docs/DATA_INGESTION.md](docs/DATA_INGESTION.md#cricheroes-pro-what-is-confirmed). If you can obtain an export file, share a sample and an adapter can be built with fixtures and reconciliation tests.
 
 ### Current JSON import contract
 
-Use `data/scorecards.json` as the executable example. A bundle contains a `matches` array of 1–100 matches and optional `retrieved_at`. Each match contains a numeric string `id`, `source_url`, ISO date, venue, two ordered teams, winner, result and two innings. Batting rows use player ID/name, runs, balls, fours, sixes, dismissal and not-out flag. Bowling rows use player ID/name, overs, runs, wickets, dots, wides and no-balls.
+Use `data/scorecards.json` as the executable example. A bundle contains a `matches` array of 1–100 matches and an optional `retrieved_at`. Each match contains a numeric string `id`, `source_url`, ISO date, venue, two ordered teams, winner, result and two innings. Batting rows use player ID/name, runs, balls, fours, sixes, dismissal and a not-out flag. Bowling rows use player ID/name, overs, runs, wickets, dots, wides and no-balls.
 
-Current restrictions: CricHeroes scorecard URLs for this tournament; two innings; a winner matching one team; up to 25 overs per innings and five per bowler. Ties, no-results, super overs, other providers and other competition rules are **not yet supported**. Do not force these into misleading winner records.
+Current restrictions: CricHeroes scorecard URLs for this tournament; exactly two innings; a winner matching one team; at most 25 overs per innings and five per bowler. **Ties, no-results, super overs, other providers and other competition rules are not supported** and are rejected rather than forced into a misleading winner record.
 
-Overs use cricket notation: `22.3` means 135 balls, not 22.3 decimal overs. Internally, balls are integers. Batting runs plus extras and bowling legal-ball totals must reconcile. Failed validation leaves stored scores unchanged. Repeated imports do not duplicate match statistics, although each import is logged.
+Overs use cricket notation: `22.3` means 135 balls, not 22.3 decimal overs. Internally overs are stored as integer legal balls. Batting runs plus extras, and bowling legal balls, must reconcile with innings totals. Failed validation leaves stored scores unchanged.
 
 ### Statistical scope
 
-All displayed aggregates are for imported matches and active team filters. Batting average is runs divided by dismissals; zero dismissals yields an undefined average, displayed as a dash. Strike rate is runs per 100 balls. Bowling economy is conceded runs per six legal balls. Zero-ball, zero-run not-out listings do not count as batting innings. No ball-by-ball data is bundled; phase splits, wagon wheels, pace/spin analysis and predictive win probabilities are not available. DLS results must not be used to infer a standard NRR table without competition rules.
+All aggregates cover imported matches and the active team filter. Batting average is runs divided by dismissals; with zero dismissals it is undefined and shown as a dash. Strike rate is runs per 100 balls. Bowling economy is runs conceded per six legal balls. Zero-ball, zero-run not-out listings do not count as batting innings. No ball-by-ball data exists, so phase splits, wagon wheels, pace/spin analysis and predictive win probabilities are not shown. DLS results are not used to infer a standard NRR table.
 
-## Tests and backup
+## Tests
+
+The integration tests need a **separate PostgreSQL test database** whose name ends in `_test`; they drop and recreate its schema. SQLite is not used as a substitute. Set `TEST_DATABASE_URL` in `.env` (see `.env.example`), then:
 
 ```bash
 python3 -m unittest discover -s tests -v
+node --check web/app.js   # if Node is installed
 ```
 
-If Node is installed, also check browser JavaScript syntax:
-
-```bash
-node --check web/app.js
-```
-
-Before updating code or reimporting corrections, stop the server and back up `data/placcric.sqlite3` together with any adjacent `-wal` and `-shm` files. Alternatively use SQLite's backup API for a consistent live snapshot. Backups contain PIN hashes, sessions and notes; keep them private and outside git.
+Without `TEST_DATABASE_URL` the PostgreSQL tests are reported as skipped; set `PLACCRIC_REQUIRE_PG=1` to make that an error. The tests refuse to run against a database whose name does not end in `_test` or that matches `DATABASE_URL`.
 
 ## Develop with Claude Code in the cloud
 
-Start with [the cloud handoff guide](docs/CLAUDE_CLOUD.md) and [the milestone backlog](docs/ROADMAP.md). Connect the Claude GitHub App to this repository, push these files, then choose the repository in https://claude.ai/code. Cloud sessions work from repository content, not files left only on your Mac.
-
-Official instructions: https://code.claude.com/docs/en/claude-code-on-the-web
+See [docs/CLAUDE_CLOUD.md](docs/CLAUDE_CLOUD.md) and [docs/ROADMAP.md](docs/ROADMAP.md). Cloud sessions work from repository content, not from files only on your Mac. Official guide: https://code.claude.com/docs/en/claude-code-on-the-web
 
 ## Attribution and licensing
 
-PlacCric is independent of CricHeroes and is not an official CricHeroes product. Source links and provenance should accompany imported data. No licence to redistribute third-party match data is implied. The repository owner should select a code licence and review data-sharing permissions before public redistribution.
+PlacCric is independent of CricHeroes and is not an official CricHeroes product. Imported data keeps its source links. No licence to redistribute third-party match data is implied. The repository owner should choose a code licence and review data-sharing permissions before public redistribution.
