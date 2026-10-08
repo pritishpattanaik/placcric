@@ -21,6 +21,10 @@ ENV PLACCRIC_VERSION=${PLACCRIC_VERSION} PLACCRIC_HOST=0.0.0.0 PLACCRIC_PORT=800
 LABEL org.opencontainers.image.source="https://github.com/pritishpattanaik/placcric" \
       org.opencontainers.image.revision="${PLACCRIC_VERSION}"
 
+# Private storage for uploaded scorecards (a named volume in compose.yaml).
+RUN mkdir -p /app/uploads && chown placcric /app/uploads && chmod 700 /app/uploads
+ENV PLACCRIC_UPLOAD_DIR=/app/uploads
+
 USER placcric
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \

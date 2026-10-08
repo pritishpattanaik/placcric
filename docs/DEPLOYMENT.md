@@ -292,6 +292,12 @@ The app container builds its own `DATABASE_URL` from the `POSTGRES_*` values. If
 
 **Never run `docker compose down -v` or `docker volume rm placcric_pgdata`.** They delete the database. `docker compose down` without `-v` is safe.
 
+Uploaded scorecard files live in the `placcric_uploads` volume (not in the database dump). To copy them out for an off-server backup:
+
+```bash
+docker compose cp app:/app/uploads ~/placcric-backups/uploads-$(date +%Y%m%d)
+```
+
 ## Troubleshooting
 
 - **`Set POSTGRES_PASSWORD in .env`:** `.env` is missing or incomplete in the current directory.

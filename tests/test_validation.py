@@ -23,17 +23,17 @@ class ValidationTests(unittest.TestCase):
                 overs_to_balls(bad)
 
     def test_bundled_snapshot_validates(self):
-        self.assertEqual(len(validate(bundle())['matches']), 5)
+        self.assertEqual(len(validate(bundle())), 5)
 
     def test_rejections(self):
         cases = {
-            'Batting runs plus extras do not reconcile': lambda b: b['matches'][1]['innings'][0].__setitem__('runs', b['matches'][1]['innings'][0]['runs'] + 1),
-            'Source must be a scorecard for this tournament': lambda b: b['matches'][0].__setitem__('source_url', 'https://example.com/scorecard/1'),
-            'Invalid teams or winner': lambda b: b['matches'][0].__setitem__('winner', 'Somebody Else'),
-            'Two innings required': lambda b: b['matches'][0]['innings'].pop(),
+            r'batting runs \d+ \+ extras \d+ ≠ total': lambda b: b['matches'][1]['innings'][0].__setitem__('runs', b['matches'][1]['innings'][0]['runs'] + 1),
+            'Source URL must be this match': lambda b: b['matches'][0].__setitem__('source_url', 'https://example.com/scorecard/1'),
+            'Only completed matches with a winner': lambda b: b['matches'][0].__setitem__('winner', 'Somebody Else'),
+            'Exactly two innings are required': lambda b: b['matches'][0]['innings'].pop(),
             'Duplicate or invalid match ID': lambda b: b['matches'].append(copy.deepcopy(b['matches'][0])),
-            'not_out must be boolean': lambda b: b['matches'][0]['innings'][0]['batting'][0].__setitem__('not_out', 0),
-            'Bowling balls do not reconcile': lambda b: b['matches'][0]['innings'][0]['bowling'][0].__setitem__('overs', '3.5'),
+            'not-out flag must be true or false': lambda b: b['matches'][0]['innings'][0]['batting'][0].__setitem__('not_out', 0),
+            'bowlers delivered 24.5 overs': lambda b: b['matches'][0]['innings'][0]['bowling'][0].__setitem__('overs', '3.5'),
         }
         for message, mutate in cases.items():
             with self.subTest(message):

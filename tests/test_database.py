@@ -52,6 +52,27 @@ class MigrationTests(unittest.TestCase):
         upgrade(self.url)
         self.assertEqual(self.tables(), set(Base.metadata.tables))
 
+    def test_0002_assigns_existing_matches_to_the_bundled_tournament_and_rolls_back(self):
+        upgrade(self.url, '0001')
+        with self.engine.begin() as db:
+            db.execute(text("INSERT INTO teams(name) VALUES ('A'),('B')"))
+            db.execute(text("INSERT INTO matches(id,date,venue,team1,team2,winner,result,source_url,retrieved_at) "
+                            "VALUES ('1','2026-01-01','v',1,2,1,'A won','u','t')"))
+        upgrade(self.url)
+        with self.engine.connect() as db:
+            row = db.execute(text('SELECT t.external_id, t.overs_per_innings, m.stage FROM matches m '
+                                  'JOIN tournaments t ON t.id=m.tournament_id')).one()
+        self.assertEqual(tuple(row), ('2194193', 25, ''))
+        command.downgrade(alembic_config(self.url), '0001')
+        self.assertNotIn('tournaments', self.tables())
+        with self.engine.connect() as db:
+            self.assertEqual(db.execute(text('SELECT count(*) FROM matches')).scalar_one(), 1)
+
+    def test_0002_on_an_empty_database_creates_no_tournament(self):
+        upgrade(self.url)
+        with self.engine.connect() as db:
+            self.assertEqual(db.execute(text('SELECT count(*) FROM tournaments')).scalar_one(), 0)
+
     def test_constraints_reject_invalid_cricket_rows(self):
         upgrade(self.url)
         with self.engine.begin() as db:

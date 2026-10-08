@@ -57,7 +57,8 @@ def main():
             print('PIN updated. Existing sessions ended.')
             return
 
-    app = create_app(engine, settings.allowed_hosts, settings.database_url, secure_cookies=settings.cookie_secure)
+    app = create_app(engine, settings.allowed_hosts, settings.database_url, secure_cookies=settings.cookie_secure,
+                     upload_dir=settings.upload_dir)
     print(f'PlacCric listening on {settings.host}:{settings.port} ({settings.environment}); '
           f'allowed hosts: {", ".join(settings.allowed_hosts)}', flush=True)
     proxy = {'proxy_headers': True, 'forwarded_allow_ips': settings.forwarded_allow_ips} if settings.forwarded_allow_ips \

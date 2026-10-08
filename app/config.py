@@ -58,6 +58,7 @@ class Settings:
     allowed_hosts: tuple = ()
     forwarded_allow_ips: str = ''
     cookie_secure: bool = False
+    upload_dir: str = str(ROOT / 'uploads')
 
 
 def flag(name, default):
@@ -86,4 +87,5 @@ def get_settings(port=None):
                     host=os.environ.get('PLACCRIC_HOST', '127.0.0.1').strip() or '127.0.0.1', port=port,
                     allowed_hosts=hosts or (f'localhost:{port}', f'127.0.0.1:{port}'),
                     forwarded_allow_ips=os.environ.get('PLACCRIC_FORWARDED_ALLOW_IPS', '').strip(),
-                    cookie_secure=flag('PLACCRIC_COOKIE_SECURE', environment == 'production'))
+                    cookie_secure=flag('PLACCRIC_COOKIE_SECURE', environment == 'production'),
+                    upload_dir=os.environ.get('PLACCRIC_UPLOAD_DIR', '').strip() or str(ROOT / 'uploads'))

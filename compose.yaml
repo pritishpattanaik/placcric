@@ -41,6 +41,9 @@ services:
       PLACCRIC_COOKIE_SECURE: ${PLACCRIC_COOKIE_SECURE:-}
     ports:
       - "${PLACCRIC_PUBLISH:-127.0.0.1:8000}:8000"
+    volumes:
+      # Uploaded scorecard files, kept privately for audit (not served, not in git).
+      - uploads:/app/uploads
 
   caddy:
     profiles: ["https"]
@@ -90,5 +93,6 @@ services:
 
 volumes:
   pgdata:
+  uploads:
   caddy_data:
   caddy_config:

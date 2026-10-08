@@ -7,7 +7,8 @@ from datetime import date, datetime
 from typing import Optional
 
 from sqlalchemy import (Boolean, CheckConstraint, Date, DateTime, ForeignKey, ForeignKeyConstraint, Index,
-                        Integer, String, Text, text)
+                        Integer, String, Text, UniqueConstraint, text)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 NAMING = {'ix': 'ix_%(table_name)s_%(column_0_N_name)s', 'uq': 'uq_%(table_name)s_%(column_0_N_name)s',
@@ -43,12 +44,31 @@ class Player(Base):
     provider: Mapped[str] = mapped_column(String(32), server_default='cricheroes')
 
 
+class Tournament(Base):
+    """A competition with its own playing conditions. external_id is the provider's tournament ID."""
+    __tablename__ = 'tournaments'
+    __table_args__ = (UniqueConstraint('provider', 'external_id', name='uq_tournaments_provider_external_id'),
+                      CheckConstraint('overs_per_innings BETWEEN 1 AND 50', name='overs_range'),
+                      CheckConstraint('max_overs_per_bowler BETWEEN 1 AND overs_per_innings', name='bowler_overs_range'))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    provider: Mapped[str] = mapped_column(String(32), server_default='cricheroes')
+    external_id: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    name: Mapped[str] = mapped_column(Text, unique=True)
+    slug: Mapped[str] = mapped_column(Text, server_default='')
+    overs_per_innings: Mapped[int] = mapped_column(Integer)
+    max_overs_per_bowler: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text('now()'))
+
+
 class Match(Base):
     __tablename__ = 'matches'
     __table_args__ = (CheckConstraint('team1 <> team2', name='distinct_teams'),
                       CheckConstraint('winner IN (team1, team2)', name='winner_is_participant'),
-                      Index('ix_matches_date', 'date'))
+                      Index('ix_matches_date', 'date'), Index('ix_matches_tournament', 'tournament_id', 'date'))
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    tournament_id: Mapped[int] = mapped_column(ForeignKey('tournaments.id'))
+    # Competition stage as given by the source, e.g. "Semi Final"; empty for league matches.
+    stage: Mapped[str] = mapped_column(Text, server_default='')
     provider: Mapped[str] = mapped_column(String(32), server_default='cricheroes')
     date: Mapped[date] = mapped_column(Date)
     venue: Mapped[str] = mapped_column(Text)
@@ -136,6 +156,56 @@ class ImportLog(Base):
     content_sha256: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
 
 
+class ImportBatch(Base):
+    """An uploaded file, parsed and validated but not published until approved."""
+    __tablename__ = 'import_batches'
+    __table_args__ = (CheckConstraint("source_kind IN ('json', 'pdf')", name='source_kind'),
+                      CheckConstraint("status IN ('staged', 'approved', 'rejected')", name='status'),
+                      Index('ix_import_batches_created', 'created_at'))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[str] = mapped_column(Text)
+    source_kind: Mapped[str] = mapped_column(String(16))
+    # Display only; the raw file is stored privately under a generated name.
+    original_filename: Mapped[str] = mapped_column(Text)
+    file_sha256: Mapped[str] = mapped_column(String(64))
+    raw_path: Mapped[str] = mapped_column(Text)
+    tournament_id: Mapped[int] = mapped_column(ForeignKey('tournaments.id'))
+    status: Mapped[str] = mapped_column(String(16))
+    # Parsed records, source metadata, errors and warnings.
+    payload: Mapped[dict] = mapped_column(JSONB)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    reviewed_by: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+
+class MatchRevision(Base):
+    """Every published version of a match. The scorecard tables hold the latest revision."""
+    __tablename__ = 'match_revisions'
+    __table_args__ = (UniqueConstraint('match_id', 'number', name='uq_match_revisions_match_id_number'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    match_id: Mapped[str] = mapped_column(ForeignKey('matches.id'))
+    number: Mapped[int] = mapped_column(Integer)
+    content: Mapped[dict] = mapped_column(JSONB)
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[str] = mapped_column(Text)
+    batch_id: Mapped[Optional[int]] = mapped_column(ForeignKey('import_batches.id'), nullable=True)
+    note: Mapped[str] = mapped_column(Text, server_default='')
+
+
+class PlayerAlias(Base):
+    """A scorecard name confirmed by an admin as a given player, scoped to the team the name appeared for."""
+    __tablename__ = 'player_aliases'
+    __table_args__ = (UniqueConstraint('team_id', 'alias_key', name='uq_player_aliases_team_id_alias_key'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    team_id: Mapped[int] = mapped_column(ForeignKey('teams.id'))
+    alias_key: Mapped[str] = mapped_column(Text)
+    display_name: Mapped[str] = mapped_column(Text)
+    player_id: Mapped[str] = mapped_column(ForeignKey('players.id'))
+    batch_id: Mapped[Optional[int]] = mapped_column(ForeignKey('import_batches.id'), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 # --- Interim single-user PIN authentication -------------------------------------------------
 # Retained only until Milestone 2 replaces it with Google OpenID Connect. These tables are never
 # populated by the SQLite migration (PIN hashes, sessions and login attempts are not migrated).
@@ -163,5 +233,5 @@ class LoginAttempt(Base):
     attempted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-CRICKET_TABLES = ('teams', 'players', 'roster_entries', 'matches', 'innings', 'batting', 'bowling', 'notes',
-                  'import_log')
+CRICKET_TABLES = ('tournaments', 'teams', 'players', 'roster_entries', 'matches', 'innings', 'batting', 'bowling',
+                  'notes', 'import_log', 'import_batches', 'match_revisions', 'player_aliases')

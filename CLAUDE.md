@@ -40,6 +40,6 @@ Improve a cricket analytics app for tournament 2194193, with UCC club views. Pri
 
 ## Data integrity
 
-The import validator only supports completed two-innings matches with a winner from this tournament. Extend the schema deliberately for ties/no-results/super overs. Reimports must not duplicate statistics. Validation runs before writes, and writes are atomic. Club roster listings stay separate from confirmed squads. Link Google accounts to players only through an explicit admin-approved mapping, never by name.
+Imports are staged and published only on admin approval (app/ingestion/staging.py). Every match belongs to a tournament whose overs limits are enforced; only completed two-innings matches with a winner are supported. Extend the schema deliberately for ties/no-results/super overs. CricHeroes scorecard PDFs carry names, not player IDs: identities come only from admin-confirmed, team-scoped aliases; suggestions never merge automatically. Never commit real scorecard PDFs; tests use tests/pdf_fixture.py. Reimports must not duplicate statistics. Validation runs before writes, and writes are atomic. Club roster listings stay separate from confirmed squads. Link Google accounts to players only through an explicit admin-approved mapping, never by name.
 
 Current milestone status and the next task are in docs/ROADMAP.md.
