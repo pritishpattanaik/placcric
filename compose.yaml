@@ -1,0 +1,94 @@
+# PlacCric containers. All settings come from .env (see .env.example and docs/DEPLOYMENT.md).
+#   docker compose up -d                         database + app on http://localhost:8000
+#   COMPOSE_PROFILES=https (in .env)             adds Caddy with automatic HTTPS for PLACCRIC_DOMAIN
+#   docker compose --profile test run --rm tests run the test suite against a throwaway database
+name: placcric
+
+services:
+  db:
+    image: postgres:16-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-placcric}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Loopback only: reachable from this machine (backups, psql, venv mode), never from the network.
+    ports:
+      - "${POSTGRES_PUBLISH:-127.0.0.1:5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      args:
+        PLACCRIC_VERSION: ${PLACCRIC_VERSION:-dev}
+    image: placcric-app:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-placcric}
+      PLACCRIC_ENV: ${PLACCRIC_ENV:-development}
+      PLACCRIC_ALLOWED_HOSTS: ${PLACCRIC_ALLOWED_HOSTS:-localhost:8000,127.0.0.1:8000}
+      PLACCRIC_FORWARDED_ALLOW_IPS: ${PLACCRIC_FORWARDED_ALLOW_IPS:-}
+      PLACCRIC_COOKIE_SECURE: ${PLACCRIC_COOKIE_SECURE:-}
+    ports:
+      - "${PLACCRIC_PUBLISH:-127.0.0.1:8000}:8000"
+
+  caddy:
+    profiles: ["https"]
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      PLACCRIC_DOMAIN: ${PLACCRIC_DOMAIN:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # Throwaway PostgreSQL for the test suite (in memory, no published port, not your data).
+  test-db:
+    profiles: ["test"]
+    image: postgres:16-bookworm
+    environment:
+      POSTGRES_USER: placcric
+      POSTGRES_PASSWORD: throwaway-test-only
+      POSTGRES_DB: placcric_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U placcric -d placcric_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  tests:
+    profiles: ["test"]
+    build:
+      context: .
+    image: placcric-app:test
+    depends_on:
+      test-db:
+        condition: service_healthy
+    environment:
+      TEST_DATABASE_URL: postgresql://placcric:throwaway-test-only@test-db:5432/placcric_test
+      PLACCRIC_REQUIRE_PG: "1"
+    command: ["python", "-m", "unittest", "discover", "-s", "tests", "-v"]
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

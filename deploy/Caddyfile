@@ -1,0 +1,7 @@
+# Public HTTPS reverse proxy (enabled with COMPOSE_PROFILES=https). Caddy obtains and renews
+# Let's Encrypt certificates automatically for PLACCRIC_DOMAIN, whose DNS must point at this server.
+{$PLACCRIC_DOMAIN} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	reverse_proxy app:8000
+}

@@ -1,13 +1,18 @@
-from .database import overs
+from sqlalchemy import text
 
-def records(db,sql,args=()):return [dict(r) for r in db.execute(sql,args)]
+from .ingestion.scorecards import overs
+
+# Byte-order collation keeps name ordering identical to the previous SQLite (BINARY) behaviour.
+C='COLLATE "C"'
+
+def records(db,sql,args=None):return [dict(r) for r in db.execute(text(sql),args or {}).mappings()]
 def teams(db):
- ts=records(db,'SELECT t.*, (SELECT count(*) FROM roster_entries r WHERE r.team_id=t.id) club_listings,(SELECT count(*) FROM innings i WHERE i.team_id=t.id) played,(SELECT count(*) FROM matches m WHERE m.winner=t.id) wins FROM teams t ORDER BY name')
+ ts=records(db,'SELECT t.*, (SELECT count(*) FROM roster_entries r WHERE r.team_id=t.id) club_listings,(SELECT count(*) FROM innings i WHERE i.team_id=t.id) played,(SELECT count(*) FROM matches m WHERE m.winner=t.id) wins FROM teams t ORDER BY name '+C)
  for t in ts:t['losses']=t['played']-t['wins']
  return ts
 
 def players(db,team=None):
- ps=records(db,'SELECT * FROM players ORDER BY name')
+ ps=records(db,'SELECT * FROM players ORDER BY name '+C)
  bats=records(db,'SELECT b.*,i.team_id,m.date FROM batting b JOIN innings i ON i.match_id=b.match_id AND i.number=b.innings_number JOIN matches m ON m.id=b.match_id')
  bowls=records(db,'SELECT b.*, CASE WHEN b.innings_number=1 THEN m.team2 ELSE m.team1 END team_id,m.date FROM bowling b JOIN matches m ON m.id=b.match_id')
  out=[];tn={t['id']:t['name'] for t in teams(db)}
@@ -25,11 +30,11 @@ def players(db,team=None):
 
 def match_list(db,team=None):
  sql='SELECT m.*,a.name team1_name,b.name team2_name FROM matches m JOIN teams a ON a.id=m.team1 JOIN teams b ON b.id=m.team2'
- args=()
- if team:sql+=' WHERE m.team1=? OR m.team2=?';args=(team,team)
- ms=records(db,sql+' ORDER BY date DESC,id DESC',args)
+ args={}
+ if team:sql+=' WHERE m.team1=:team OR m.team2=:team';args={'team':team}
+ ms=records(db,sql+' ORDER BY m.date DESC,m.id '+C+' DESC',args)
  for m in ms:
-  m['innings']=records(db,'SELECT i.*,t.name team_name FROM innings i JOIN teams t ON t.id=i.team_id WHERE match_id=? ORDER BY number',(m['id'],))
+  m['innings']=records(db,'SELECT i.*,t.name team_name FROM innings i JOIN teams t ON t.id=i.team_id WHERE match_id=:m ORDER BY number',{'m':m['id']})
   for inn in m['innings']:inn['overs']=overs(inn['balls']);inn['run_rate']=round(inn['runs']*6/inn['balls'],2) if inn['balls'] else None
  return ms
 
@@ -37,9 +42,9 @@ def match_detail(db,mid):
  m=next((m for m in match_list(db) if m['id']==mid),None)
  if not m:return None
  for inn in m['innings']:
-  args=(mid,inn['number'])
-  inn['batting']=records(db,'SELECT b.*,p.name FROM batting b JOIN players p ON p.id=b.player_id WHERE match_id=? AND innings_number=? ORDER BY position',args)
-  inn['bowling']=records(db,'SELECT b.*,p.name FROM bowling b JOIN players p ON p.id=b.player_id WHERE match_id=? AND innings_number=? ORDER BY position',args)
+  args={'m':mid,'n':inn['number']}
+  inn['batting']=records(db,'SELECT b.*,p.name FROM batting b JOIN players p ON p.id=b.player_id WHERE match_id=:m AND innings_number=:n ORDER BY position',args)
+  inn['bowling']=records(db,'SELECT b.*,p.name FROM bowling b JOIN players p ON p.id=b.player_id WHERE match_id=:m AND innings_number=:n ORDER BY position',args)
   for b in inn['batting']:b['strike_rate']=round(b['runs']*100/b['balls'],2) if b['balls'] else None
   for b in inn['bowling']:b['overs']=overs(b['balls']);b['economy']=round(b['runs']*6/b['balls'],2) if b['balls'] else None
  return m
@@ -47,8 +52,8 @@ def match_detail(db,mid):
 def profile(db,pid,team=None):
  p=next((p for p in players(db,team) if p['id']==pid),None)
  if not p:return None
- p['batting_history']=records(db,'SELECT b.*,m.date,m.source_url,t.name team_name FROM batting b JOIN matches m ON m.id=b.match_id JOIN innings i ON i.match_id=b.match_id AND i.number=b.innings_number JOIN teams t ON t.id=i.team_id WHERE player_id=?'+(' AND i.team_id=?' if team else '')+' ORDER BY m.date,m.id',(pid,team) if team else (pid,))
- p['bowling_history']=records(db,'SELECT b.*,m.date,m.source_url FROM bowling b JOIN matches m ON m.id=b.match_id WHERE player_id=?'+(' AND CASE WHEN b.innings_number=1 THEN m.team2 ELSE m.team1 END=?' if team else '')+' ORDER BY m.date,m.id',(pid,team) if team else (pid,))
+ p['batting_history']=records(db,'SELECT b.*,m.date,m.source_url,t.name team_name FROM batting b JOIN matches m ON m.id=b.match_id JOIN innings i ON i.match_id=b.match_id AND i.number=b.innings_number JOIN teams t ON t.id=i.team_id WHERE player_id=:p'+(' AND i.team_id=:team' if team else '')+' ORDER BY m.date,m.id '+C,{'p':pid,'team':team})
+ p['bowling_history']=records(db,'SELECT b.*,m.date,m.source_url FROM bowling b JOIN matches m ON m.id=b.match_id WHERE player_id=:p'+(' AND CASE WHEN b.innings_number=1 THEN m.team2 ELSE m.team1 END=:team' if team else '')+' ORDER BY m.date,m.id '+C,{'p':pid,'team':team})
  for b in p['bowling_history']:b['overs']=overs(b['balls'])
  insights=[]
  if p['innings']<3:insights.append(f"Only {p['innings']} batting innings covered. This is too little to infer a stable weakness or form trend.")
@@ -61,7 +66,7 @@ def profile(db,pid,team=None):
 def summary(db,team=None):
  ms=match_list(db,team);ps=players(db,team);ts=teams(db)
  runs=sum(i['runs'] for m in ms for i in m['innings'] if not team or i['team_id']==team)
- return dict(teams=ts,completed=len(ms),recorded_runs=runs,batting_players=len([p for p in ps if p['innings']]),roster_entries=db.execute('SELECT count(*) FROM roster_entries').fetchone()[0],matches=ms,batting_leaders=sorted(ps,key=lambda p:(-p['runs'],p['name']))[:5],bowling_leaders=sorted([p for p in ps if p['bowling_balls']],key=lambda p:(-p['wickets'],p['economy']))[:5],coverage=dict(retrieved_at='2026-10-07',completed_scorecards=db.execute('SELECT count(*) FROM matches').fetchone()[0],rosters='Public club listings; not confirmed tournament squads',ball_by_ball=False,live_sync=False))
+ return dict(teams=ts,completed=len(ms),recorded_runs=runs,batting_players=len([p for p in ps if p['innings']]),roster_entries=db.execute(text('SELECT count(*) FROM roster_entries')).scalar_one(),matches=ms,batting_leaders=sorted(ps,key=lambda p:(-p['runs'],p['name']))[:5],bowling_leaders=sorted([p for p in ps if p['bowling_balls']],key=lambda p:(-p['wickets'],p['economy']))[:5],coverage=dict(retrieved_at='2026-10-07',completed_scorecards=db.execute(text('SELECT count(*) FROM matches')).scalar_one(),rosters='Public club listings; not confirmed tournament squads',ball_by_ball=False,live_sync=False))
 
 def coach(db,pid,question):
  p=profile(db,pid)

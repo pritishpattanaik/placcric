@@ -34,30 +34,26 @@ Review the staged files, especially third-party seed data, before committing. If
 1. Open https://claude.ai/code and install/authorise the Claude GitHub App for pritishpattanaik/placcric.
 2. Select the repository and the branch containing these files.
 3. Use a normal cloud session for the credit shown in your screenshot. That offer says Projects and Routines are excluded and expires 5 November at 3:59 PM GMT+8; verify the offer details in your account. Do not assume API usage or local coding sessions use this credit.
-4. The app needs Python 3.10+ and no dependency installation. Start with default network access; do not add CricHeroes access for ordinary development.
+4. The app needs Python 3.10+, `pip install -r requirements.txt` and a PostgreSQL server. Cloud images may include PostgreSQL; create an isolated `placcric_test` database and set `TEST_DATABASE_URL` so integration tests run rather than skip. Start with default network access; do not add CricHeroes access for ordinary development.
 5. Paste the task below. Review the diff and test report, then create a PR. Pull merged changes to your Mac before running them there.
 
 Official cloud guide: https://code.claude.com/docs/en/claude-code-on-the-web
 
-## First task prompt
+## Next task prompt
+
+Milestone 1 (PostgreSQL) is implemented. After it is reviewed and merged, continue with Milestone 2:
 
 ```text
-Read CLAUDE.md, README.md, docs/DATA_INGESTION.md and docs/ROADMAP.md.
-Inspect the actual repository and run the existing tests first.
-Implement milestone M1: staged JSON imports with a preview and explicit
-confirmation before committing, preserving the existing local port-8000 app.
-Show source, match IDs, innings totals, validation errors, and corrections
-relative to existing matches. Reject invalid files without changing analytics.
-Retain provenance and content hashes; use a versioned SQLite migration and
-make identical imports a no-op. Keep raw uploads private and outside git.
-No CricHeroes crawling, paid provider, LLM calls or framework rewrite.
-Add meaningful tests for validation, duplicate imports, correction approval,
-rollback and auth/CSRF on import actions. Update docs for implemented behaviour.
-Open a PR with test results and clearly state any unperformed UI checks.
+Read CLAUDE.md, README.md, docs/ARCHITECTURE.md, docs/DATA_INGESTION.md and docs/ROADMAP.md.
+Inspect the repository and run the tests against an isolated PostgreSQL test database first.
+Implement Milestone 2 (Google OpenID Connect, invite allowlist, admin/captain/player roles with
+team scope, explicit first-admin bootstrap, removal of PIN login) as described in docs/ROADMAP.md.
+Use mocked-provider tests only; mark the live Google check pending until credentials are supplied.
+Update docs and open a PR with test results and required configuration.
 ```
 
 ## Use the credit deliberately
 
 Finish one milestone per session, then review and merge it before the next. Ask Claude to inspect existing code rather than rebuild everything. Keep expensive AI experiments until ingestion and UI are reliable. The $100 is a budget, not a guarantee of how many tasks will complete; monitor the account balance and stop unnecessary sessions.
 
-Cloud localhost is the cloud container, not your Mac. Continue running `python3 server.py --port 8000` on the Mac for your personal dashboard. Cloud sessions are development environments, not a permanent SQLite host.
+Cloud localhost is the cloud container, not your Mac. Continue running `python3 server.py --port 8000` on the Mac for your personal dashboard. Cloud sessions are development environments, not a permanent database host.

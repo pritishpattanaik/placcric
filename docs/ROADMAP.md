@@ -1,27 +1,76 @@
 # Delivery milestones
 
-Complete one milestone per pull request. Keep implemented status in README accurate.
+One milestone per branch and pull request. Each PR reports changes, test results, remaining limitations and any configuration the owner must supply. Keep README status accurate. Nothing is merged or deployed automatically.
 
-## M0 — Verify the baseline
+| Milestone | Status |
+| --- | --- |
+| M1 — PostgreSQL | **Implemented** (pending review) |
+| M2 — Google login and access control | Planned; needs Google OAuth client credentials from the owner for the live check |
+| M3 — Reliable match ingestion | Planned |
+| CricHeroes adapter | Blocked until an authorised export/integration is confirmed or a sample export is supplied |
+| M4 — UI and analytics | Planned |
+| M5 — Release readiness | Partly delivered early: Docker Compose stack, dev/stage/prod workflow, deploy/backup/restore scripts, CI, HTTPS profile, health/readiness. Public exposure waits for M2 |
+| Optional LLM coaching | Future, separate; explicit cost and privacy controls required |
 
-Run existing tests. Exercise PIN setup/login/logout/reset, team filters, match details, notes and imports on desktop and mobile. Add HTTP integration coverage for authentication, CSRF and private-file access. Fix concrete failures without a rewrite.
+## Baseline (before M1)
 
-## M1 — Reviewed imports and provenance
+Working: a standard-library Python server with SQLite, single PIN login (PBKDF2 hash, hashed session tokens, CSRF, throttling, loopback binding), validated atomic JSON imports, dashboard/match centre/profiles/team filters/comparison/captain notes, deterministic coaching and six tests.
 
-Add a versioned migration mechanism, private raw import storage, file hashes, staged preview, approval and correction revisions. Display row-level failures and changed fields. Acceptance: rejection changes nothing; identical imports do not change stats; approved corrections update atomically; prior revisions can be restored; state-changing endpoints require authentication and CSRF.
+Gaps: no migrations; startup seeded the database implicitly; no multi-user identity or roles; imports wrote immediately with no staging, approval, revisions or raw-file provenance; no CSV contract; ties/no-results unsupported; UI not regression-tested on mobile or with keyboards.
 
-## M2 — Scorer-friendly input
+## M1 — PostgreSQL (implemented)
 
-Add documented CSV templates and validation, with manual score entry if needed. Acceptance: scorer can supply a completed match without visiting CricHeroes; previews show missing/ambiguous identities; no silent merges; malformed uploads cannot corrupt existing data. Keep OCR optional and reviewed.
+Delivered:
 
-## M3 — UI and cricket correctness
+- FastAPI + SQLAlchemy 2 + Alembic backend with PostgreSQL; routes, auth, models, ingestion, analytics and configuration in separate modules. API responses identical to the SQLite version for every endpoint.
+- Migration `0001` creating teams, club listings, players (provider IDs), matches, innings, batting, bowling, notes, import history and interim auth tables, with check constraints. Overs stored as integer legal balls.
+- Explicit idempotent `seed`; the server never migrates or seeds, and refuses to start if the schema is out of date.
+- `migrate-sqlite` with dry run: read-only source, preserved IDs, no PIN/session/login-attempt data, count/aggregate/digest verification inside one transaction, documented recovery.
+- `DATABASE_URL` configuration, `.env.example`, macOS PostgreSQL 16 setup, backup/restore, `/healthz` and `/readyz`.
+- Tests against an isolated PostgreSQL test database: migrations up/down and model parity, constraints, seed idempotency, analytics, atomic imports, HTTP auth/CSRF/guards, and SQLite migration.
 
-Improve keyboard navigation, focus, mobile scorecard tables, contrast and loading/error states. Extend result modelling for ties/no-results only with documented competition rules. Acceptance: tested wide/narrow layouts, correct empty/zero/undefined values and visible coverage caveats. No invented ball-by-ball metrics.
+Acceptance criteria: all tests pass with `TEST_DATABASE_URL` set; `python3 server.py --port 8000` serves the existing UI from PostgreSQL; the migration of a legacy database reports matching counts and totals and leaves the SQLite file's hash unchanged.
 
-## M4 — Confirmed provider adapter
+Follow-up delivered on the same PR: Docker Compose deployment (PostgreSQL 16, app, optional Caddy HTTPS), environment-driven server settings, `scripts/deploy.sh|backup.sh|restore.sh`, GitHub Actions CI and docs/DEPLOYMENT.md.
 
-Blocked until authorised access is confirmed. Implement only the documented provider contract with mock fixtures, retry limits, deduplication and correction handling. Acceptance: browsing dashboard causes no provider requests; ingestion remains optional and file imports still work offline.
+Limitations: authentication is still the interim single PIN; import staging and revisions are M3; the coverage date shown in the UI is still the fixed snapshot date.
 
-## M5 — Optional multi-user hosting or AI
+## M2 — Google login and access control
 
-Choose separately, based on actual need. Hosting requires production HTTP/HTTPS, individual identities/roles, backups and restore tests. AI requires explicit data disclosure, provider secrets outside git, cost limits and evidence citations. Neither belongs in baseline implementation by default.
+- Google OpenID Connect via a maintained library (Authlib planned), server-side authorization-code flow with state, nonce and PKCE.
+- Validate issuer, audience, expiry and nonce; require `email_verified`; identify accounts by Google `sub`, not email.
+- Opaque server-side sessions, rotated at login, with expiry, logout and revocation; CSRF retained. HttpOnly cookies, SameSite=Lax for the OAuth redirect, Secure under HTTPS; local HTTP only with an explicit development setting.
+- Remove PIN login entirely (migration drops the PIN tables).
+- Invite/allowlist access: signing in with an unlisted Google account grants nothing.
+- Roles enforced on the backend with team scope: admin (manage access, approve imports and corrections), captain (authorised club data and club notes), player (permitted analytics).
+- Google account ↔ cricket player links only via explicit admin-approved mapping; never by name.
+- First admin bootstrapped from explicit configuration, never "first login wins".
+- Docs: Google Cloud consent screen, client credentials and exact callback URLs (`http://localhost:8000/auth/callback` locally; the production HTTPS equivalent).
+- Mocked-provider tests: success, invalid state, invalid nonce, denied consent, unverified email, unknown account, session expiry. No real Google accounts in automated tests.
+
+Acceptance: no private data reachable without an allowlisted, verified Google identity; each role's permissions are tested; live Google sign-in marked pending until the owner supplies credentials and confirms it.
+
+## M3 — Reliable match ingestion
+
+- Reviewed JSON imports and documented, versioned CSV templates (matches, innings, batting, bowling) with row-level errors.
+- Stage imports before committing; the preview shows source, match IDs, innings totals, validation errors, identity ambiguities and field-level changes to existing matches.
+- Admin approval before publishing. Preserve source URLs, external IDs, timestamps, file hashes, reviewer identity and correction history.
+- Identical imports are a no-op; corrections create revisions; accepted records apply atomically; previous revisions can be restored.
+- Raw uploads stored privately (outside served directories and git), with size limits and safe generated filenames.
+- Provider-neutral model; any CricHeroes adapter is separate from analytics.
+- Explicit handling (schema and UI) or explicit rejection of ties, no-results and super overs, documented.
+- Club listings stay separate from confirmed squads.
+
+Acceptance: rejection changes nothing; identical imports don't change stats; approved corrections update atomically; restore works; no dashboard request contacts CricHeroes.
+
+## CricHeroes adapter (blocked)
+
+See docs/DATA_INGESTION.md for what is confirmed. Build only against a documented export format or an approved integration, with fixtures and reconciliation tests. Scorer-supplied files continue to work regardless.
+
+## M4 — UI and analytics
+
+Preserve and improve the dashboard, match centre, player profiles, team filters, comparison and captain notes. Test desktop/mobile layouts, keyboard navigation, contrast, loading/error/empty states and permission-dependent controls. Display imported-data coverage and source warnings clearly. Handle zero vs undefined statistics correctly. No ball-by-ball, phase, wagon-wheel or predictive metrics without the underlying data. Coaching stays deterministic.
+
+## M5 — Release readiness
+
+Reproducible setup, migrations and seed/import commands; PostgreSQL backup/restore; production guidance for HTTPS, OAuth callbacks, secrets, trusted hosts and persistent storage; health/readiness endpoints; tests for auth, permissions, analytics, migrations, imports and correction rollback; a manual acceptance checklist; updated README, CLAUDE.md and architecture docs. No public deployment without the owner's decision.
