@@ -1,0 +1,1706 @@
+{
+  "retrieved_at": "2026-10-07",
+  "method": "Public rendered CricHeroes scorecards, visually checked; all batting totals reconcile with extras.",
+  "matches": [
+    {
+      "id": "27377965",
+      "source_url": "https://cricheroes.com/scorecard/27377965/diwhyn-choice-t25-cricket-carnival-season-2/utkal-cricket-club-ucc.-vs-cyber-xi/scorecard",
+      "date": "2026-10-03",
+      "venue": "Kajang High School, Kuala Lumpur",
+      "team1": "UTKAL Cricket Club (UCC).",
+      "team2": "Cyber XI",
+      "result": "Cyber XI won by 7 wickets",
+      "winner": "Cyber XI",
+      "toss": "Cyber XI opted to field",
+      "pom": "Feroz Ahmad",
+      "dls": false,
+      "warning": "",
+      "innings": [
+        {
+          "team": "UTKAL Cricket Club (UCC).",
+          "runs": 188,
+          "wickets": 9,
+          "overs": "25.0",
+          "extras": 18,
+          "batting": [
+            {
+              "player_id": "32722355",
+              "name": "Pritish Pattanaik",
+              "runs": 0,
+              "balls": 4,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "c Harish Naidu b Rajesh Kharche (RK)",
+              "not_out": false
+            },
+            {
+              "player_id": "5545929",
+              "name": "Muhammad Faisal Latif",
+              "runs": 30,
+              "balls": 41,
+              "fours": 2,
+              "sixes": 0,
+              "dismissal": "c&b Vishnu Vardhan Reddy",
+              "not_out": false
+            },
+            {
+              "player_id": "3947098",
+              "name": "AVJOT SINGH",
+              "runs": 3,
+              "balls": 8,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Rajesh Kharche (RK)",
+              "not_out": false
+            },
+            {
+              "player_id": "27699220",
+              "name": "Zeeshan Ahmad",
+              "runs": 86,
+              "balls": 59,
+              "fours": 6,
+              "sixes": 5,
+              "dismissal": "c Rajesh Kharche (RK) b Vishnu Vardhan Reddy",
+              "not_out": false
+            },
+            {
+              "player_id": "27931953",
+              "name": "Ahamed Ameen",
+              "runs": 3,
+              "balls": 3,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "c Karthik Pasupuleti b Saurabh Singh",
+              "not_out": false
+            },
+            {
+              "player_id": "10278635",
+              "name": "Muhammad Qaisar",
+              "runs": 20,
+              "balls": 9,
+              "fours": 2,
+              "sixes": 1,
+              "dismissal": "b Vishnu Vardhan Reddy",
+              "not_out": false
+            },
+            {
+              "player_id": "22680633",
+              "name": "Mr Jana",
+              "runs": 1,
+              "balls": 5,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "c Dil Abbas b Feroz Ahmad",
+              "not_out": false
+            },
+            {
+              "player_id": "16647968",
+              "name": "Partheepan",
+              "runs": 4,
+              "balls": 5,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "b Saurabh Singh",
+              "not_out": false
+            },
+            {
+              "player_id": "43233177",
+              "name": "Atikur Rahman",
+              "runs": 13,
+              "balls": 9,
+              "fours": 1,
+              "sixes": 1,
+              "dismissal": "not out",
+              "not_out": true
+            },
+            {
+              "player_id": "3946968",
+              "name": "Sangram Pattnaik",
+              "runs": 9,
+              "balls": 5,
+              "fours": 2,
+              "sixes": 0,
+              "dismissal": "b Feroz Ahmad",
+              "not_out": false
+            },
+            {
+              "player_id": "32618600",
+              "name": "Sultan Sultan",
+              "runs": 1,
+              "balls": 2,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            }
+          ],
+          "bowling": [
+            {
+              "player_id": "5114144",
+              "name": "Rajesh Kharche (RK)",
+              "overs": "4.0",
+              "runs": 37,
+              "wickets": 2,
+              "dots": 13,
+              "wides": 3,
+              "no_balls": 0
+            },
+            {
+              "player_id": "8844057",
+              "name": "Saurabh Singh",
+              "overs": "5.0",
+              "runs": 33,
+              "wickets": 2,
+              "dots": 14,
+              "wides": 2,
+              "no_balls": 0
+            },
+            {
+              "player_id": "5598792",
+              "name": "Vishnu Vardhan Reddy",
+              "overs": "5.0",
+              "runs": 31,
+              "wickets": 3,
+              "dots": 17,
+              "wides": 7,
+              "no_balls": 0
+            },
+            {
+              "player_id": "5546031",
+              "name": "Dil Abbas",
+              "overs": "5.0",
+              "runs": 32,
+              "wickets": 0,
+              "dots": 10,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "45234095",
+              "name": "Harish Naidu",
+              "overs": "3.0",
+              "runs": 25,
+              "wickets": 0,
+              "dots": 7,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "5211397",
+              "name": "Feroz Ahmad",
+              "overs": "3.0",
+              "runs": 26,
+              "wickets": 2,
+              "dots": 9,
+              "wides": 2,
+              "no_balls": 0
+            }
+          ]
+        },
+        {
+          "team": "Cyber XI",
+          "runs": 189,
+          "wickets": 3,
+          "overs": "22.3",
+          "extras": 13,
+          "batting": [
+            {
+              "player_id": "4200921",
+              "name": "Anirudh Pamaraju",
+              "runs": 46,
+              "balls": 44,
+              "fours": 4,
+              "sixes": 1,
+              "dismissal": "b Sangram Pattnaik",
+              "not_out": false
+            },
+            {
+              "player_id": "4333508",
+              "name": "Sumit Potbhare",
+              "runs": 4,
+              "balls": 7,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "c Atikur Rahman b Sultan Sultan",
+              "not_out": false
+            },
+            {
+              "player_id": "10051329",
+              "name": "Karthik Pasupuleti",
+              "runs": 32,
+              "balls": 25,
+              "fours": 2,
+              "sixes": 2,
+              "dismissal": "b Atikur Rahman",
+              "not_out": false
+            },
+            {
+              "player_id": "5211397",
+              "name": "Feroz Ahmad",
+              "runs": 72,
+              "balls": 43,
+              "fours": 5,
+              "sixes": 6,
+              "dismissal": "not out",
+              "not_out": true
+            },
+            {
+              "player_id": "16387349",
+              "name": "Nalin Hudson Costha",
+              "runs": 22,
+              "balls": 16,
+              "fours": 3,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            }
+          ],
+          "bowling": [
+            {
+              "player_id": "16647968",
+              "name": "Partheepan",
+              "overs": "4.0",
+              "runs": 37,
+              "wickets": 0,
+              "dots": 8,
+              "wides": 1,
+              "no_balls": 0
+            },
+            {
+              "player_id": "32618600",
+              "name": "Sultan Sultan",
+              "overs": "5.0",
+              "runs": 29,
+              "wickets": 1,
+              "dots": 17,
+              "wides": 2,
+              "no_balls": 0
+            },
+            {
+              "player_id": "3946968",
+              "name": "Sangram Pattnaik",
+              "overs": "4.0",
+              "runs": 26,
+              "wickets": 1,
+              "dots": 12,
+              "wides": 1,
+              "no_balls": 0
+            },
+            {
+              "player_id": "27699220",
+              "name": "Zeeshan Ahmad",
+              "overs": "3.0",
+              "runs": 19,
+              "wickets": 0,
+              "dots": 10,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "43233177",
+              "name": "Atikur Rahman",
+              "overs": "2.0",
+              "runs": 24,
+              "wickets": 1,
+              "dots": 4,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "5545929",
+              "name": "Muhammad Faisal Latif",
+              "overs": "4.0",
+              "runs": 42,
+              "wickets": 0,
+              "dots": 5,
+              "wides": 1,
+              "no_balls": 0
+            },
+            {
+              "player_id": "27931953",
+              "name": "Ahamed Ameen",
+              "overs": "0.3",
+              "runs": 11,
+              "wickets": 0,
+              "dots": 1,
+              "wides": 2,
+              "no_balls": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "27377978",
+      "source_url": "https://cricheroes.com/scorecard/27377978/diwhyn-choice-t25-cricket-carnival-season-2/spartans-cc-malaysia-vs-klstars/scorecard",
+      "date": "2026-10-04",
+      "venue": "Kajang High School, Kuala Lumpur",
+      "team1": "Spartans CC Malaysia",
+      "team2": "KLStars",
+      "result": "KLStars won by 5 wickets",
+      "winner": "KLStars",
+      "toss": "KLStars opted to field",
+      "pom": "Vivek Yadav",
+      "dls": false,
+      "warning": "",
+      "innings": [
+        {
+          "team": "Spartans CC Malaysia",
+          "runs": 199,
+          "wickets": 10,
+          "overs": "25.0",
+          "extras": 17,
+          "batting": [
+            {
+              "player_id": "16016287",
+              "name": "Gurvinder Singh",
+              "runs": 62,
+              "balls": 53,
+              "fours": 7,
+              "sixes": 2,
+              "dismissal": "c PRASH Vaishnav b Vivek Yadav",
+              "not_out": false
+            },
+            {
+              "player_id": "19719972",
+              "name": "Amer Mahmood",
+              "runs": 1,
+              "balls": 9,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "c&b Vivek Yadav",
+              "not_out": false
+            },
+            {
+              "player_id": "19949283",
+              "name": "Sumesh R",
+              "runs": 20,
+              "balls": 16,
+              "fours": 4,
+              "sixes": 0,
+              "dismissal": "b Vivek Yadav",
+              "not_out": false
+            },
+            {
+              "player_id": "11088175",
+              "name": "Kaushik Dey",
+              "runs": 44,
+              "balls": 26,
+              "fours": 3,
+              "sixes": 3,
+              "dismissal": "c PRASH Vaishnav b Vivek Yadav",
+              "not_out": false
+            },
+            {
+              "player_id": "49772433",
+              "name": "Kashif Baloch (KB)",
+              "runs": 1,
+              "balls": 4,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "c Kunal Bhandare b Mohammed Sultan",
+              "not_out": false
+            },
+            {
+              "player_id": "688289",
+              "name": "Manish Tripathi",
+              "runs": 10,
+              "balls": 9,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "c PRASH Vaishnav b Vivek Yadav",
+              "not_out": false
+            },
+            {
+              "player_id": "4442768",
+              "name": "Jagseer Singh (Jack)",
+              "runs": 21,
+              "balls": 15,
+              "fours": 1,
+              "sixes": 1,
+              "dismissal": "run out Vivek Upreti",
+              "not_out": false
+            },
+            {
+              "player_id": "31807361",
+              "name": "M Abrar",
+              "runs": 6,
+              "balls": 4,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "b Santosh Gosavi",
+              "not_out": false
+            },
+            {
+              "player_id": "27734322",
+              "name": "Vikash Choudhary",
+              "runs": 0,
+              "balls": 3,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Santosh Gosavi",
+              "not_out": false
+            },
+            {
+              "player_id": "3237566",
+              "name": "Chandu",
+              "runs": 1,
+              "balls": 2,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Jay Giri",
+              "not_out": false
+            },
+            {
+              "player_id": "15808954",
+              "name": "Lokesh Suri Cric KL",
+              "runs": 16,
+              "balls": 9,
+              "fours": 3,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            }
+          ],
+          "bowling": [
+            {
+              "player_id": "4290181",
+              "name": "Santosh Gosavi",
+              "overs": "5.0",
+              "runs": 40,
+              "wickets": 2,
+              "dots": 14,
+              "wides": 2,
+              "no_balls": 0
+            },
+            {
+              "player_id": "27014853",
+              "name": "Vivek Yadav",
+              "overs": "5.0",
+              "runs": 13,
+              "wickets": 5,
+              "dots": 19,
+              "wides": 1,
+              "no_balls": 0
+            },
+            {
+              "player_id": "24082263",
+              "name": "Mohammed Sultan",
+              "overs": "4.0",
+              "runs": 34,
+              "wickets": 1,
+              "dots": 11,
+              "wides": 3,
+              "no_balls": 0
+            },
+            {
+              "player_id": "4188733",
+              "name": "Jay Giri",
+              "overs": "5.0",
+              "runs": 46,
+              "wickets": 1,
+              "dots": 14,
+              "wides": 3,
+              "no_balls": 0
+            },
+            {
+              "player_id": "27019657",
+              "name": "Ajatshatru Singh",
+              "overs": "4.0",
+              "runs": 45,
+              "wickets": 0,
+              "dots": 3,
+              "wides": 1,
+              "no_balls": 0
+            },
+            {
+              "player_id": "24421587",
+              "name": "Hashir Ahmad Sajjad",
+              "overs": "2.0",
+              "runs": 15,
+              "wickets": 0,
+              "dots": 5,
+              "wides": 0,
+              "no_balls": 0
+            }
+          ]
+        },
+        {
+          "team": "KLStars",
+          "runs": 204,
+          "wickets": 5,
+          "overs": "23.2",
+          "extras": 9,
+          "batting": [
+            {
+              "player_id": "4290181",
+              "name": "Santosh Gosavi",
+              "runs": 33,
+              "balls": 21,
+              "fours": 5,
+              "sixes": 0,
+              "dismissal": "b Ashiq Hussain Cric K L",
+              "not_out": false
+            },
+            {
+              "player_id": "2935775",
+              "name": "PRASH Vaishnav",
+              "runs": 44,
+              "balls": 31,
+              "fours": 6,
+              "sixes": 0,
+              "dismissal": "c Sumesh R b Ashiq Hussain Cric K L",
+              "not_out": false
+            },
+            {
+              "player_id": "23684553",
+              "name": "Deepak Giri",
+              "runs": 10,
+              "balls": 17,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Kaushik Dey",
+              "not_out": false
+            },
+            {
+              "player_id": "3231005",
+              "name": "Vivek Upreti",
+              "runs": 34,
+              "balls": 20,
+              "fours": 1,
+              "sixes": 3,
+              "dismissal": "b Ashiq Hussain Cric K L",
+              "not_out": false
+            },
+            {
+              "player_id": "24421587",
+              "name": "Hashir Ahmad Sajjad",
+              "runs": 48,
+              "balls": 31,
+              "fours": 4,
+              "sixes": 2,
+              "dismissal": "not out",
+              "not_out": true
+            },
+            {
+              "player_id": "42453432",
+              "name": "Kunal Bhandare",
+              "runs": 26,
+              "balls": 20,
+              "fours": 3,
+              "sixes": 0,
+              "dismissal": "c Jagseer Singh (Jack) b M Abrar",
+              "not_out": false
+            },
+            {
+              "player_id": "4986420",
+              "name": "Abhishek Bera",
+              "runs": 0,
+              "balls": 1,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            }
+          ],
+          "bowling": [
+            {
+              "player_id": "3237566",
+              "name": "Chandu",
+              "overs": "3.0",
+              "runs": 22,
+              "wickets": 0,
+              "dots": 7,
+              "wides": 2,
+              "no_balls": 0
+            },
+            {
+              "player_id": "27734322",
+              "name": "Vikash Choudhary",
+              "overs": "3.0",
+              "runs": 32,
+              "wickets": 0,
+              "dots": 2,
+              "wides": 2,
+              "no_balls": 0
+            },
+            {
+              "player_id": "15808954",
+              "name": "Lokesh Suri Cric KL",
+              "overs": "1.0",
+              "runs": 18,
+              "wickets": 0,
+              "dots": 0,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "23796127",
+              "name": "Ashiq Hussain Cric K L",
+              "overs": "5.0",
+              "runs": 27,
+              "wickets": 3,
+              "dots": 9,
+              "wides": 0,
+              "no_balls": 1
+            },
+            {
+              "player_id": "11088175",
+              "name": "Kaushik Dey",
+              "overs": "4.2",
+              "runs": 47,
+              "wickets": 1,
+              "dots": 9,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "31807361",
+              "name": "M Abrar",
+              "overs": "5.0",
+              "runs": 33,
+              "wickets": 1,
+              "dots": 10,
+              "wides": 2,
+              "no_balls": 0
+            },
+            {
+              "player_id": "688289",
+              "name": "Manish Tripathi",
+              "overs": "2.0",
+              "runs": 24,
+              "wickets": 0,
+              "dots": 4,
+              "wides": 0,
+              "no_balls": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "27291206",
+      "source_url": "https://cricheroes.com/scorecard/27291206/diwhyn-choice-t25-cricket-carnival-season-2/rising-stars-xi-vs-chittagong-fighters-cc/scorecard",
+      "date": "2026-09-26",
+      "venue": "Kajang High School, Kuala Lumpur",
+      "team1": "Rising Stars XI",
+      "team2": "Chittagong Fighters CC",
+      "result": "Chittagong Fighters CC won by 4 wickets (DLS)",
+      "winner": "Chittagong Fighters CC",
+      "toss": "Rising Stars XI opted to bat",
+      "pom": "MD SAIFUDDIN",
+      "dls": true,
+      "warning": "Rain-shortened DLS match. Final revised target was 139 in 15 overs. Do not compare raw totals as a normal chase.",
+      "innings": [
+        {
+          "team": "Rising Stars XI",
+          "runs": 165,
+          "wickets": 7,
+          "overs": "19.5",
+          "extras": 18,
+          "batting": [
+            {
+              "player_id": "5913833",
+              "name": "Karthik Arun",
+              "runs": 39,
+              "balls": 36,
+              "fours": 7,
+              "sixes": 0,
+              "dismissal": "c Hassan Active Cricket b Ali Md Akram",
+              "not_out": false
+            },
+            {
+              "player_id": "15602006",
+              "name": "Nitheesh Ts",
+              "runs": 53,
+              "balls": 37,
+              "fours": 8,
+              "sixes": 2,
+              "dismissal": "c Md Rayhan b HASAN MURAD MUNNA",
+              "not_out": false
+            },
+            {
+              "player_id": "1152722",
+              "name": "R. Sundar",
+              "runs": 5,
+              "balls": 10,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "b HASAN MURAD MUNNA",
+              "not_out": false
+            },
+            {
+              "player_id": "15304089",
+              "name": "Ganesh Sathiyamoorthy",
+              "runs": 7,
+              "balls": 3,
+              "fours": 0,
+              "sixes": 1,
+              "dismissal": "lbw b Ali Md Akram",
+              "not_out": false
+            },
+            {
+              "player_id": "48304954",
+              "name": "Milantha Kasun",
+              "runs": 15,
+              "balls": 15,
+              "fours": 1,
+              "sixes": 1,
+              "dismissal": "c Asif Khan b Md Ripon Ali",
+              "not_out": false
+            },
+            {
+              "player_id": "4442713",
+              "name": "Sankar Mahadevan",
+              "runs": 14,
+              "balls": 9,
+              "fours": 2,
+              "sixes": 0,
+              "dismissal": "c Md Rayhan b Kaiser Faruki",
+              "not_out": false
+            },
+            {
+              "player_id": "4602111",
+              "name": "Anoj Joseph",
+              "runs": 0,
+              "balls": 2,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Kaiser Faruki",
+              "not_out": false
+            },
+            {
+              "player_id": "5878525",
+              "name": "IFTHIKAR",
+              "runs": 14,
+              "balls": 7,
+              "fours": 3,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            },
+            {
+              "player_id": "5546033",
+              "name": "Muhammad Hussain",
+              "runs": 0,
+              "balls": 0,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            }
+          ],
+          "bowling": [
+            {
+              "player_id": "45959392",
+              "name": "Md Ripon Ali",
+              "overs": "3.5",
+              "runs": 27,
+              "wickets": 1,
+              "dots": 15,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "8770741",
+              "name": "Mohib",
+              "overs": "4.0",
+              "runs": 28,
+              "wickets": 0,
+              "dots": 12,
+              "wides": 1,
+              "no_balls": 0
+            },
+            {
+              "player_id": "35453827",
+              "name": "Kaiser Faruki",
+              "overs": "4.0",
+              "runs": 27,
+              "wickets": 2,
+              "dots": 13,
+              "wides": 1,
+              "no_balls": 0
+            },
+            {
+              "player_id": "12694338",
+              "name": "Md Rayhan",
+              "overs": "2.0",
+              "runs": 21,
+              "wickets": 0,
+              "dots": 5,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "6424394",
+              "name": "HASAN MURAD MUNNA",
+              "overs": "3.0",
+              "runs": 11,
+              "wickets": 2,
+              "dots": 11,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "52500976",
+              "name": "Ali Md Akram",
+              "overs": "2.0",
+              "runs": 26,
+              "wickets": 2,
+              "dots": 4,
+              "wides": 1,
+              "no_balls": 0
+            },
+            {
+              "player_id": "21883425",
+              "name": "Asif Khan",
+              "overs": "1.0",
+              "runs": 14,
+              "wickets": 0,
+              "dots": 2,
+              "wides": 2,
+              "no_balls": 0
+            }
+          ]
+        },
+        {
+          "team": "Chittagong Fighters CC",
+          "runs": 142,
+          "wickets": 6,
+          "overs": "14.4",
+          "extras": 15,
+          "batting": [
+            {
+              "player_id": "6424394",
+              "name": "HASAN MURAD MUNNA",
+              "runs": 3,
+              "balls": 7,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Chandramohan Y",
+              "not_out": false
+            },
+            {
+              "player_id": "20729152",
+              "name": "Hassan Active Cricket",
+              "runs": 28,
+              "balls": 16,
+              "fours": 2,
+              "sixes": 2,
+              "dismissal": "c Milantha Kasun b R. Sundar",
+              "not_out": false
+            },
+            {
+              "player_id": "41496138",
+              "name": "MD SAIFUDDIN",
+              "runs": 59,
+              "balls": 31,
+              "fours": 3,
+              "sixes": 4,
+              "dismissal": "c Muhammad Hussain b Thomas",
+              "not_out": false
+            },
+            {
+              "player_id": "50986290",
+              "name": "UMAIR Hassan",
+              "runs": 28,
+              "balls": 24,
+              "fours": 1,
+              "sixes": 1,
+              "dismissal": "lbw b Nitheesh Ts",
+              "not_out": false
+            },
+            {
+              "player_id": "16866884",
+              "name": "Ali Ahasan Alif",
+              "runs": 2,
+              "balls": 4,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "lbw b Srinivas Rao T",
+              "not_out": false
+            },
+            {
+              "player_id": "42050947",
+              "name": "Salman Khan",
+              "runs": 0,
+              "balls": 2,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "c Nitheesh Ts b Srinivas Rao T",
+              "not_out": false
+            },
+            {
+              "player_id": "12694338",
+              "name": "Md Rayhan",
+              "runs": 6,
+              "balls": 3,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            },
+            {
+              "player_id": "8770741",
+              "name": "Mohib",
+              "runs": 1,
+              "balls": 1,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            }
+          ],
+          "bowling": [
+            {
+              "player_id": "4442524",
+              "name": "Thomas",
+              "overs": "3.0",
+              "runs": 34,
+              "wickets": 1,
+              "dots": 7,
+              "wides": 4,
+              "no_balls": 0
+            },
+            {
+              "player_id": "4293416",
+              "name": "Chandramohan Y",
+              "overs": "3.0",
+              "runs": 21,
+              "wickets": 1,
+              "dots": 10,
+              "wides": 3,
+              "no_balls": 0
+            },
+            {
+              "player_id": "15602006",
+              "name": "Nitheesh Ts",
+              "overs": "1.4",
+              "runs": 22,
+              "wickets": 1,
+              "dots": 2,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "1152722",
+              "name": "R. Sundar",
+              "overs": "3.0",
+              "runs": 28,
+              "wickets": 1,
+              "dots": 7,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "15504009",
+              "name": "Srinivas Rao T",
+              "overs": "2.0",
+              "runs": 14,
+              "wickets": 2,
+              "dots": 5,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "5546033",
+              "name": "Muhammad Hussain",
+              "overs": "2.0",
+              "runs": 22,
+              "wickets": 0,
+              "dots": 3,
+              "wides": 1,
+              "no_balls": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "27291189",
+      "source_url": "https://cricheroes.com/scorecard/27291189/diwhyn-choice-t25-cricket-carnival-season-2/klstars-vs-elite-warriors-cc/scorecard",
+      "date": "2026-09-26",
+      "venue": "Kajang High School, Kuala Lumpur",
+      "team1": "KLStars",
+      "team2": "Elite Warriors CC",
+      "result": "Elite Warriors CC won by 5 wickets",
+      "winner": "Elite Warriors CC",
+      "toss": "Elite Warriors CC opted to field",
+      "pom": "Manikandaprabu Gnanam",
+      "dls": false,
+      "warning": "Source discrepancy: summary end-of-day note says 283/5; the rendered scorecard and batting-plus-extras reconciliation give 287/5. Scorecard total retained.",
+      "innings": [
+        {
+          "team": "KLStars",
+          "runs": 282,
+          "wickets": 5,
+          "overs": "25.0",
+          "extras": 15,
+          "batting": [
+            {
+              "player_id": "1936055",
+              "name": "Arifur Rahman",
+              "runs": 180,
+              "balls": 80,
+              "fours": 17,
+              "sixes": 11,
+              "dismissal": "not out",
+              "not_out": true
+            },
+            {
+              "player_id": "4290181",
+              "name": "Santosh Gosavi",
+              "runs": 17,
+              "balls": 12,
+              "fours": 4,
+              "sixes": 0,
+              "dismissal": "b Senthil Kumar M",
+              "not_out": false
+            },
+            {
+              "player_id": "23684553",
+              "name": "Deepak Giri",
+              "runs": 22,
+              "balls": 24,
+              "fours": 3,
+              "sixes": 0,
+              "dismissal": "c Praveen b Gopala Perugu",
+              "not_out": false
+            },
+            {
+              "player_id": "3231005",
+              "name": "Vivek Upreti",
+              "runs": 20,
+              "balls": 7,
+              "fours": 2,
+              "sixes": 2,
+              "dismissal": "b Ravi Sounderrajan",
+              "not_out": false
+            },
+            {
+              "player_id": "42453432",
+              "name": "Kunal Bhandare",
+              "runs": 9,
+              "balls": 10,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "lbw b Manikandaprabu Gnanam",
+              "not_out": false
+            },
+            {
+              "player_id": "4986420",
+              "name": "Abhishek Bera",
+              "runs": 8,
+              "balls": 12,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "b Gopala Perugu",
+              "not_out": false
+            },
+            {
+              "player_id": "4188733",
+              "name": "Jay Giri",
+              "runs": 11,
+              "balls": 6,
+              "fours": 2,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            }
+          ],
+          "bowling": [
+            {
+              "player_id": "18335057",
+              "name": "Manikandaprabu Gnanam",
+              "overs": "5.0",
+              "runs": 55,
+              "wickets": 1,
+              "dots": 13,
+              "wides": 3,
+              "no_balls": 0
+            },
+            {
+              "player_id": "10367380",
+              "name": "Senthil Kumar M",
+              "overs": "4.0",
+              "runs": 44,
+              "wickets": 1,
+              "dots": 10,
+              "wides": 3,
+              "no_balls": 0
+            },
+            {
+              "player_id": "2388004",
+              "name": "Sri Sounik",
+              "overs": "3.0",
+              "runs": 36,
+              "wickets": 0,
+              "dots": 4,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "28935028",
+              "name": "Anurag Thenge",
+              "overs": "2.0",
+              "runs": 28,
+              "wickets": 0,
+              "dots": 4,
+              "wides": 1,
+              "no_balls": 0
+            },
+            {
+              "player_id": "10117187",
+              "name": "Aneesh Vadakkoott Mohan",
+              "overs": "5.0",
+              "runs": 64,
+              "wickets": 0,
+              "dots": 8,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "20265288",
+              "name": "Gopala Perugu",
+              "overs": "5.0",
+              "runs": 30,
+              "wickets": 2,
+              "dots": 15,
+              "wides": 2,
+              "no_balls": 1
+            },
+            {
+              "player_id": "15420832",
+              "name": "Ravi Sounderrajan",
+              "overs": "1.0",
+              "runs": 21,
+              "wickets": 1,
+              "dots": 1,
+              "wides": 0,
+              "no_balls": 0
+            }
+          ]
+        },
+        {
+          "team": "Elite Warriors CC",
+          "runs": 287,
+          "wickets": 5,
+          "overs": "24.5",
+          "extras": 37,
+          "batting": [
+            {
+              "player_id": "2388004",
+              "name": "Sri Sounik",
+              "runs": 13,
+              "balls": 7,
+              "fours": 3,
+              "sixes": 0,
+              "dismissal": "b Mohammed Sultan",
+              "not_out": false
+            },
+            {
+              "player_id": "8855634",
+              "name": "Ajay Sahu",
+              "runs": 59,
+              "balls": 49,
+              "fours": 8,
+              "sixes": 2,
+              "dismissal": "b Jay Giri",
+              "not_out": false
+            },
+            {
+              "player_id": "4304943",
+              "name": "Praveen",
+              "runs": 9,
+              "balls": 11,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "c Mohammed Sultan b Vivek Yadav",
+              "not_out": false
+            },
+            {
+              "player_id": "5540988",
+              "name": "Syed Nizamuddin Inamdar",
+              "runs": 57,
+              "balls": 28,
+              "fours": 5,
+              "sixes": 4,
+              "dismissal": "c Santosh Gosavi b Vivek Yadav",
+              "not_out": false
+            },
+            {
+              "player_id": "18335057",
+              "name": "Manikandaprabu Gnanam",
+              "runs": 79,
+              "balls": 32,
+              "fours": 5,
+              "sixes": 7,
+              "dismissal": "not out",
+              "not_out": true
+            },
+            {
+              "player_id": "10117187",
+              "name": "Aneesh Vadakkoott Mohan",
+              "runs": 33,
+              "balls": 22,
+              "fours": 0,
+              "sixes": 3,
+              "dismissal": "b Santosh Gosavi",
+              "not_out": false
+            },
+            {
+              "player_id": "15420832",
+              "name": "Ravi Sounderrajan",
+              "runs": 0,
+              "balls": 0,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            }
+          ],
+          "bowling": [
+            {
+              "player_id": "24082263",
+              "name": "Mohammed Sultan",
+              "overs": "3.0",
+              "runs": 35,
+              "wickets": 1,
+              "dots": 5,
+              "wides": 5,
+              "no_balls": 0
+            },
+            {
+              "player_id": "27014853",
+              "name": "Vivek Yadav",
+              "overs": "5.0",
+              "runs": 17,
+              "wickets": 2,
+              "dots": 21,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "4290181",
+              "name": "Santosh Gosavi",
+              "overs": "5.0",
+              "runs": 57,
+              "wickets": 1,
+              "dots": 7,
+              "wides": 5,
+              "no_balls": 0
+            },
+            {
+              "player_id": "4188733",
+              "name": "Jay Giri",
+              "overs": "4.5",
+              "runs": 62,
+              "wickets": 1,
+              "dots": 11,
+              "wides": 3,
+              "no_balls": 0
+            },
+            {
+              "player_id": "37416392",
+              "name": "Vijay Kl Stars",
+              "overs": "2.0",
+              "runs": 26,
+              "wickets": 0,
+              "dots": 4,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "27019657",
+              "name": "Ajatshatru Singh",
+              "overs": "3.0",
+              "runs": 41,
+              "wickets": 0,
+              "dots": 5,
+              "wides": 3,
+              "no_balls": 0
+            },
+            {
+              "player_id": "42453432",
+              "name": "Kunal Bhandare",
+              "overs": "2.0",
+              "runs": 36,
+              "wickets": 0,
+              "dots": 4,
+              "wides": 2,
+              "no_balls": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "27377953",
+      "source_url": "https://cricheroes.com/scorecard/27377953/diwhyn-choice-t25-cricket-carnival-season-2/rising-stars-xi-vs-wisden-cricket-club/scorecard",
+      "date": "2026-10-03",
+      "venue": "Kajang High School, Kuala Lumpur",
+      "team1": "Rising Stars XI",
+      "team2": "Wisden Cricket Club",
+      "result": "Rising Stars XI won by 151 runs",
+      "winner": "Rising Stars XI",
+      "toss": "Wisden Cricket Club opted to field",
+      "pom": "Thomas",
+      "dls": false,
+      "warning": "Source scorecard lists 12 batters, including two zero-ball not-out entries. Imported as recorded; this does not establish a standard Playing XI.",
+      "innings": [
+        {
+          "team": "Rising Stars XI",
+          "runs": 209,
+          "wickets": 9,
+          "overs": "25.0",
+          "extras": 23,
+          "batting": [
+            {
+              "player_id": "5913833",
+              "name": "Karthik Arun",
+              "runs": 50,
+              "balls": 39,
+              "fours": 9,
+              "sixes": 0,
+              "dismissal": "c Sam b Abdul Asmath",
+              "not_out": false
+            },
+            {
+              "player_id": "15602006",
+              "name": "Nitheesh Ts",
+              "runs": 4,
+              "balls": 4,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "c Daniel Immanuvel b Ayman Ahmed",
+              "not_out": false
+            },
+            {
+              "player_id": "4602111",
+              "name": "Anoj Joseph",
+              "runs": 12,
+              "balls": 25,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Abdul Asmath",
+              "not_out": false
+            },
+            {
+              "player_id": "48304954",
+              "name": "Milantha Kasun",
+              "runs": 12,
+              "balls": 9,
+              "fours": 2,
+              "sixes": 0,
+              "dismissal": "c Siranjeevi Nagaraj b Arunkumar Rajendran",
+              "not_out": false
+            },
+            {
+              "player_id": "5541105",
+              "name": "Selvakumar K",
+              "runs": 46,
+              "balls": 29,
+              "fours": 3,
+              "sixes": 2,
+              "dismissal": "c Daniel Immanuvel b Siranjeevi Nagaraj",
+              "not_out": false
+            },
+            {
+              "player_id": "15957727",
+              "name": "Goutham Gopakumar",
+              "runs": 0,
+              "balls": 2,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "c Daniel Immanuvel b Abdul Asmath",
+              "not_out": false
+            },
+            {
+              "player_id": "15304089",
+              "name": "Ganesh Sathiyamoorthy",
+              "runs": 32,
+              "balls": 24,
+              "fours": 3,
+              "sixes": 1,
+              "dismissal": "c Sam b Ayman Ahmed",
+              "not_out": false
+            },
+            {
+              "player_id": "5878525",
+              "name": "IFTHIKAR",
+              "runs": 1,
+              "balls": 2,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "c Siranjeevi Nagaraj b Daniel Immanuvel",
+              "not_out": false
+            },
+            {
+              "player_id": "4442524",
+              "name": "Thomas",
+              "runs": 20,
+              "balls": 11,
+              "fours": 2,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            },
+            {
+              "player_id": "4442713",
+              "name": "Sankar Mahadevan",
+              "runs": 2,
+              "balls": 3,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Siranjeevi Nagaraj",
+              "not_out": false
+            },
+            {
+              "player_id": "5546033",
+              "name": "Muhammad Hussain",
+              "runs": 7,
+              "balls": 3,
+              "fours": 0,
+              "sixes": 1,
+              "dismissal": "not out",
+              "not_out": true
+            }
+          ],
+          "bowling": [
+            {
+              "player_id": "4308795",
+              "name": "Karthik Jayakumar",
+              "overs": "4.0",
+              "runs": 41,
+              "wickets": 0,
+              "dots": 11,
+              "wides": 1,
+              "no_balls": 0
+            },
+            {
+              "player_id": "41973665",
+              "name": "Ayman Ahmed",
+              "overs": "3.0",
+              "runs": 30,
+              "wickets": 2,
+              "dots": 9,
+              "wides": 4,
+              "no_balls": 0
+            },
+            {
+              "player_id": "33183497",
+              "name": "Siranjeevi Nagaraj",
+              "overs": "5.0",
+              "runs": 37,
+              "wickets": 2,
+              "dots": 13,
+              "wides": 2,
+              "no_balls": 0
+            },
+            {
+              "player_id": "40155346",
+              "name": "Arunkumar Rajendran",
+              "overs": "5.0",
+              "runs": 26,
+              "wickets": 1,
+              "dots": 18,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "24258413",
+              "name": "Abdul Asmath",
+              "overs": "5.0",
+              "runs": 33,
+              "wickets": 3,
+              "dots": 13,
+              "wides": 2,
+              "no_balls": 1
+            },
+            {
+              "player_id": "19246439",
+              "name": "Daniel Immanuvel",
+              "overs": "3.0",
+              "runs": 34,
+              "wickets": 1,
+              "dots": 3,
+              "wides": 1,
+              "no_balls": 0
+            }
+          ]
+        },
+        {
+          "team": "Wisden Cricket Club",
+          "runs": 58,
+          "wickets": 10,
+          "overs": "12.0",
+          "extras": 9,
+          "batting": [
+            {
+              "player_id": "24258413",
+              "name": "Abdul Asmath",
+              "runs": 12,
+              "balls": 23,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "c Ganesh Sathiyamoorthy b Thomas",
+              "not_out": false
+            },
+            {
+              "player_id": "5592021",
+              "name": "ZOHAIB ALI",
+              "runs": 4,
+              "balls": 2,
+              "fours": 1,
+              "sixes": 0,
+              "dismissal": "c Anoj Joseph b Thomas",
+              "not_out": false
+            },
+            {
+              "player_id": "14982920",
+              "name": "Tariqul Islam Tariq",
+              "runs": 0,
+              "balls": 1,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Thomas",
+              "not_out": false
+            },
+            {
+              "player_id": "31457148",
+              "name": "Sam",
+              "runs": 0,
+              "balls": 3,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "lbw b Chandramohan Y",
+              "not_out": false
+            },
+            {
+              "player_id": "38083938",
+              "name": "Ashok Krishnan",
+              "runs": 0,
+              "balls": 1,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Thomas",
+              "not_out": false
+            },
+            {
+              "player_id": "18874581",
+              "name": "Ajay Karumanchi",
+              "runs": 1,
+              "balls": 6,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "c Muhammad Hussain b Chandramohan Y",
+              "not_out": false
+            },
+            {
+              "player_id": "12224153",
+              "name": "Ganesh Varma Xchanging",
+              "runs": 0,
+              "balls": 5,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Thomas",
+              "not_out": false
+            },
+            {
+              "player_id": "33183497",
+              "name": "Siranjeevi Nagaraj",
+              "runs": 13,
+              "balls": 7,
+              "fours": 1,
+              "sixes": 1,
+              "dismissal": "c Anoj Joseph b Thomas",
+              "not_out": false
+            },
+            {
+              "player_id": "41973665",
+              "name": "Ayman Ahmed",
+              "runs": 4,
+              "balls": 9,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "b Chandramohan Y",
+              "not_out": false
+            },
+            {
+              "player_id": "4308795",
+              "name": "Karthik Jayakumar",
+              "runs": 15,
+              "balls": 15,
+              "fours": 2,
+              "sixes": 1,
+              "dismissal": "c Milantha Kasun b Nitheesh Ts",
+              "not_out": false
+            },
+            {
+              "player_id": "19246439",
+              "name": "Daniel Immanuvel",
+              "runs": 0,
+              "balls": 0,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            },
+            {
+              "player_id": "40155346",
+              "name": "Arunkumar Rajendran",
+              "runs": 0,
+              "balls": 0,
+              "fours": 0,
+              "sixes": 0,
+              "dismissal": "not out",
+              "not_out": true
+            }
+          ],
+          "bowling": [
+            {
+              "player_id": "4442524",
+              "name": "Thomas",
+              "overs": "5.0",
+              "runs": 21,
+              "wickets": 6,
+              "dots": 21,
+              "wides": 5,
+              "no_balls": 0
+            },
+            {
+              "player_id": "4293416",
+              "name": "Chandramohan Y",
+              "overs": "5.0",
+              "runs": 20,
+              "wickets": 3,
+              "dots": 21,
+              "wides": 2,
+              "no_balls": 0
+            },
+            {
+              "player_id": "5878525",
+              "name": "IFTHIKAR",
+              "overs": "1.0",
+              "runs": 5,
+              "wickets": 0,
+              "dots": 4,
+              "wides": 0,
+              "no_balls": 0
+            },
+            {
+              "player_id": "15602006",
+              "name": "Nitheesh Ts",
+              "overs": "1.0",
+              "runs": 10,
+              "wickets": 1,
+              "dots": 4,
+              "wides": 0,
+              "no_balls": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
