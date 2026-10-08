@@ -23,6 +23,8 @@ MATCH = {
                      ('Cal Three (c) (RHB)', 'lbw b Kit Eleven', 20, 20, 1, 0),
                      ('Dev Four (RHB)', 'c Lee Twelve b Max Thirteen', 10, 15, 0, 0),
                      ('Eli Five (RHB)', 'run out Ned Fourteen', 5, 10, 0, 0), ('Fay Six (RHB)', 'not out', 3, 5, 0, 0)],
+         'fow': [(55, 1, 'Ann One', '6.2'), (60, 2, 'Ben Two', '7.4'), (64, 3, 'Cal Three', '8.5'),
+                 (95, 4, 'Dev Four', '14.1'), (112, 5, 'Eli Five', '18.3')],
          'bowling': [('Jo Ten', '4', 25, 2, 10, 2, 0), ('Kit Eleven', '4', 30, 1, 8, 1, 1),
                      ('Max Thirteen', '4', 20, 1, 12, 2, 0), ('Ned Fourteen', '4', 22, 0, 9, 0, 0),
                      ('Oli Fifteen (c)', '4', 17, 0, 11, 0, 0)]},
@@ -32,6 +34,9 @@ MATCH = {
                      ('Max Thirteen (RHB)', 'b Dev Four', 8, 9, 0, 0), ('Ned Fourteen (RHB)', 'b Eli Five', 6, 8, 0, 0),
                      ('Oli Fifteen (c) (RHB)', 'b Eli Five', 5, 6, 0, 0), ('Pat Sixteen (RHB)', 'b Md. Hal Eight', 4, 5, 0, 0),
                      ('Quin Seventeen (RHB)', 'c Ann One b Ben Two', 2, 3, 0, 0), ('Ray Eighteen (LHB)', 'not out', 0, 1, 0, 0)],
+         'fow': [(30, 1, 'Ian Nine', '4.1'), (52, 2, 'Jo Ten', '8.0'), (70, 3, 'Kit Eleven', '11.2'),
+                 (80, 4, 'Lee Twelve', '13.4'), (84, 5, 'Max Thirteen', '14.5'), (88, 6, 'Ned Fourteen', '15.3'),
+                 (92, 7, 'Oli Fifteen', '16.4'), (96, 8, 'Pat Sixteen', '18.1'), (99, 9, 'Quin Seventeen', '19.2')],
          'bowling': [('Ben Two', '4', 20, 2, 10, 1, 0), ('Cal Three (c)', '4', 18, 2, 11, 0, 0),
                      ('Dev Four', '4', 22, 2, 9, 1, 0), ('Eli Five', '4', 17, 2, 12, 1, 0),
                      ('Md. Hal Eight', '4', 21, 1, 8, 0, 0)]},
@@ -58,7 +63,11 @@ def _innings_lines(team, inn):
     for no, (name, o, r, w, dots, wd, nb) in enumerate(inn['bowling'], 1):
         balls = int(o.split('.')[0]) * 6 + int((o.split('.') + ['0'])[1])
         lines.append(f'  {no:<8}{name:<40}{o:>5}{0:>5}{r:>6}{w:>6}{dots:>6}{1:>6}{0:>6}{wd:>6}{nb:>6}{r * 6 / balls:>8.2f}')
-    lines += ['', 'Fall of Wickets', '10-1 (Someone, 1.1 ov)']
+    lines += ['', 'Fall of Wickets']
+    entries = [f'{r}-{w} ({name}, {ov} ov)' for r, w, name, ov in inn.get('fow', [])]
+    # Wrap like the real PDF: entries continue on the next line, sometimes mid-entry.
+    text = ', '.join(entries)
+    lines += [text[i:i + 110] for i in range(0, len(text), 110)] or ['']
     return lines
 
 

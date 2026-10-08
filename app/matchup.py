@@ -159,7 +159,126 @@ def matchup(db, team_id, opponent_id, tournament=None):
     for p in (us, them):
         if p['small_sample']:
             limits.append(f"{p['team']}: only {p['matches']} imported match(es); treat trends as weak evidence.")
-    return {'scope': scope, 'team': us, 'opponent': them,
+    pivots = {'team': pivot_profile(db, team_id, tournament), 'opponent': pivot_profile(db, opponent_id, tournament)}
+    if not any(p['innings_with_fall_of_wickets'] for p in pivots.values()):
+        limits.append('No fall-of-wickets data in this scope (only PDF imports carry it), so no pivot-point analysis.')
+    return {'scope': scope, 'team': us, 'opponent': them, 'pivots': pivots,
             'head_to_head': head_to_head(db, team_id, opponent_id, tournament),
             'our_batters': ours_bat, 'our_bowlers': ours_bowl, 'their_batters': their_bat, 'their_bowlers': their_bowl,
             'dismissals': dismissal_profiles(db, team_id, opponent_id, tournament), 'data_limits': limits}
+
+
+# --- Pivot points from fall of wickets -------------------------------------------------------
+# Fall of wickets gives the score and over at each wicket (PDF imports only). That supports when
+# wickets fell, collapses and partnerships; it does NOT give runs per phase, so none is inferred.
+
+PHASES = (('Overs 1–6', 36), ('Overs 7–15', 90), ('Overs 16+', 10 ** 6))
+COLLAPSE_WICKETS, COLLAPSE_RUNS = 3, 15
+
+
+def phase_of(balls):
+    """Over bucket for the ball on which a wicket fell (balls = legal balls bowled when it fell)."""
+    return next(name for name, limit in PHASES if balls <= limit)
+
+
+def collapses(fow):
+    """Maximal runs of >= 3 wickets falling for <= 15 runs, measured from the score at which the
+    first of them fell (cricket convention: "collapsed from 140/2 to 152/5").
+    fow: ordered [{wicket, runs, balls}]."""
+    found, i = [], 0
+    while i < len(fow):
+        start = fow[i]
+        j = i
+        while j + 1 < len(fow) and fow[j + 1]['runs'] - start['runs'] <= COLLAPSE_RUNS:
+            j += 1
+        if j - i + 1 >= COLLAPSE_WICKETS:
+            found.append({'wickets': j - i + 1, 'runs': fow[j]['runs'] - start['runs'],
+                          'from_balls': start['balls'], 'to_balls': fow[j]['balls'],
+                          'from': f"{start['runs']}/{start['wicket'] - 1}", 'to': f"{fow[j]['runs']}/{fow[j]['wicket']}",
+                          'overs': f"{overs(start['balls'])}–{overs(fow[j]['balls'])}"})
+            i = j + 1
+        else:
+            i += 1
+    return found
+
+
+def partnerships(fow, total_runs, total_balls, wickets):
+    rows, prev_r, prev_b = [], 0, 0
+    for f in fow:
+        rows.append({'wicket': f['wicket'], 'runs': f['runs'] - prev_r, 'balls': f['balls'] - prev_b})
+        prev_r, prev_b = f['runs'], f['balls']
+    if len(fow) == wickets and wickets < 10:
+        rows.append({'wicket': wickets + 1, 'runs': total_runs - prev_r, 'balls': total_balls - prev_b, 'unbroken': True})
+    return rows
+
+
+def _fow_innings(db, team_id, tournament, batting=True):
+    """Innings in scope where team_id batted (or bowled), with fall of wickets, newest first."""
+    side = 'i.team_id = :t' if batting else 'i.team_id <> :t AND :t IN (m.team1, m.team2)'
+    rows = db.execute(text(
+        'SELECT i.match_id, i.number, i.runs, i.wickets, i.balls, m.date, tr.overs_per_innings, bt.name batting_team, '
+        'ft.name fielding_team FROM innings i JOIN matches m ON m.id=i.match_id JOIN tournaments tr ON tr.id=m.tournament_id '
+        'JOIN teams bt ON bt.id=i.team_id JOIN teams ft ON ft.id = CASE WHEN i.team_id=m.team1 THEN m.team2 ELSE m.team1 END '
+        f'WHERE {side} AND ' + TF + ' ORDER BY m.date DESC, m.id DESC'), {'t': team_id, 'tour': tournament}).mappings().all()
+    out = []
+    for r in rows:
+        fow = [dict(f) for f in db.execute(text('SELECT wicket, runs, balls, batter FROM fall_of_wickets WHERE match_id=:m '
+                                                'AND innings_number=:n ORDER BY wicket'),
+                                           {'m': r['match_id'], 'n': r['number']}).mappings()]
+        out.append({**dict(r), 'fow': fow})
+    return out
+
+
+def pivot_profile(db, team_id, tournament=None):
+    """How a team's innings turn: when its wickets fall, its collapses and partnerships,
+    and the collapses it has caused with the ball."""
+    batting = _fow_innings(db, team_id, tournament, True)
+    bowling = _fow_innings(db, team_id, tournament, False)
+    with_fow = [i for i in batting if i['fow']]
+    phases = {name: 0 for name, _ in PHASES}
+    batting_collapses, parts = [], []
+    for inn in with_fow:
+        for f in inn['fow']:
+            phases[phase_of(f['balls'])] += 1
+        for c in collapses(inn['fow']):
+            batting_collapses.append({**c, 'against': inn['fielding_team'], 'date': inn['date'].isoformat()})
+        for p in partnerships(inn['fow'], inn['runs'], inn['balls'], inn['wickets']):
+            parts.append({**p, 'against': inn['fielding_team'], 'date': inn['date'].isoformat()})
+    caused = [{**c, 'batting_team': inn['batting_team'], 'date': inn['date'].isoformat()}
+              for inn in bowling if inn['fow'] for c in collapses(inn['fow'])]
+    top = [p['runs'] for p in parts if p['wicket'] <= 3 and not p.get('unbroken')]
+    best = max(parts, key=lambda p: p['runs'], default=None)
+    return {'team': _team_name(db, team_id), 'innings_with_fall_of_wickets': len(with_fow), 'innings_total': len(batting),
+            'wickets_by_phase': phases, 'collapses': batting_collapses, 'collapses_caused_with_ball': caused,
+            'best_partnership': best, 'average_top_order_partnership': round(sum(top) / len(top), 1) if top else None,
+            'timelines': [{'against': i['fielding_team'], 'date': i['date'].isoformat(), 'runs': i['runs'],
+                           'wickets': i['wickets'], 'balls': i['balls'], 'max_balls': i['overs_per_innings'] * 6,
+                           'fow': [{'wicket': f['wicket'], 'runs': f['runs'], 'balls': f['balls'], 'batter': f['batter']}
+                                   for f in i['fow']], 'collapses': collapses(i['fow'])}
+                          for i in with_fow[:4]]}
+
+
+def player_card(db, player_id, tournament=None):
+    """Profile plus derived shape: batting positions, dismissal types, per-innings series."""
+    p = analytics.profile(db, player_id, None, tournament)
+    if not p:
+        return None
+    positions = Counter(b['position'] for b in p['batting_history'])
+    kinds = Counter(dismissal_type(b['dismissal']) for b in p['batting_history']
+                    if dismissal_type(b['dismissal']) not in ('not out', 'unknown'))
+    typical = positions.most_common(1)[0][0] if positions else None
+    role = None if typical is None else 'Opener' if typical <= 2 else 'Top order' if typical <= 4 else \
+        'Middle order' if typical <= 7 else 'Lower order'
+    return {'id': p['id'], 'name': p['name'], 'teams': p['teams'], 'matches': p['matches'],
+            'innings': p['innings'], 'runs': p['runs'], 'balls': p['balls'], 'average': p['average'],
+            'strike_rate': p['strike_rate'], 'high_score': p['high_score'], 'fours': p['fours'], 'sixes': p['sixes'],
+            'boundary_run_pct': p['boundary_run_pct'], 'dismissals': p['dismissals'],
+            'wickets': p['wickets'], 'overs': p['overs'], 'economy': p['economy'], 'bowling_balls': p['bowling_balls'],
+            'dot_ball_pct': round(p['bowling_dots'] * 100 / p['bowling_balls'], 1) if p['bowling_balls'] else None,
+            'batting_role': role, 'batting_positions': dict(sorted(positions.items())),
+            'dismissal_types': dict(kinds.most_common()),
+            'innings_series': [{'date': b['date'].isoformat(), 'runs': b['runs'], 'balls': b['balls'],
+                                'not_out': b['not_out'], 'position': b['position']} for b in p['batting_history']],
+            'bowling_series': [{'date': b['date'].isoformat(), 'overs': b['overs'], 'runs': b['runs'],
+                                'wickets': b['wickets']} for b in p['bowling_history']],
+            'small_sample': p['innings'] < SMALL_SAMPLE}

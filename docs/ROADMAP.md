@@ -10,7 +10,8 @@ One milestone per branch and pull request. Each PR reports changes, test results
 | CricHeroes adapter | **PDF adapter implemented** for the per-match “Download Scorecard” file. No API/bulk export confirmed; automated fetching not built (robots.txt/terms unchecked) |
 | M4 — UI and analytics | Planned |
 | M5 — Release readiness | Partly delivered early: Docker Compose stack, dev/stage/prod workflow, deploy/backup/restore scripts, CI, HTTPS profile, health/readiness. Public exposure waits for M2 |
-| Captain's room match-ups, Friendly Match category, optional AI analysis (OpenRouter) | **Implemented** (pending review) — see below and docs/AI.md |
+| Captain's room match-ups, Friendly Match category, optional AI analysis (OpenRouter) | **Implemented** — see below and docs/AI.md |
+| Structured AI briefs, pivot points, infographics (migration 0004) | **Implemented** (pending review) — see below |
 
 ## Captain's room, friendlies and AI (owner request, migration 0003)
 
@@ -21,6 +22,17 @@ Delivered:
 - Clearer messages for empty tournament scope; links to "Add a tournament".
 
 Not done: AI over ball-by-ball data (none exists), saved history browser for past AI answers, per-user AI limits (needs M2 accounts), automatic tournament creation.
+
+## Structured AI briefs and infographics (owner request, migration 0004)
+
+Delivered:
+- `fall_of_wickets` table (0004), parsed from the PDF; shown as a corrections diff on reimport. Older imports have none until re-uploaded.
+- Pivot points in the Captain's room: wickets by over phase (1–6, 7–15, 16+), collapses (3+ wickets for ≤15 runs), best and average top-order partnerships, wicket timelines (SVG).
+- Compare players rebuilt: role cards, butterfly chart, per-innings bars, dismissal mix.
+- Match page: wicket timeline per innings and an AI match debrief.
+- AI answers are structured JSON briefs (tactical brief in three tiers, performance diagnosis with drills, selection verdict, debrief), validated server-side; reasoning text from "thinking" models is discarded.
+
+Not done (needs data scorecards do not contain): what-if simulator, line/length or pace/spin analysis, per-batter phase strike rates, synthetic ball-by-ball, weather/pitch tags.
 
 ## Baseline (before M1)
 

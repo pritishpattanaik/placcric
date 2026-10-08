@@ -21,7 +21,8 @@ PlacCric is a Python backend (FastAPI, SQLAlchemy 2, Alembic) using **PostgreSQL
 | Deterministic, evidence-based coaching rules | CricHeroes adapter — blocked until an authorised export or integration is confirmed |
 | **Friendly Match** category for one-off matches between any teams | |
 | **Captain's room team-against-team report**: records, run rates, head to head, threats, how wickets fall, who dismissed whom | |
-| **Optional AI analysis via OpenRouter** (match plan, scouting report, player comparison, coach answers) with daily cap, cache and request log — see [docs/AI.md](docs/AI.md) | |
+| **Pivot points and infographics**: wickets by phase, collapses, partnerships, wicket timelines, comparison butterfly chart | |
+| **Optional AI analysis via OpenRouter** as short structured briefs (tactical brief, performance diagnosis with drills, selection verdict, match debrief, coach answers) with daily cap, cache and request log — see [docs/AI.md](docs/AI.md) | |
 | **Interim** single-user PIN login (hashed PIN, server sessions, CSRF, throttling) | PIN login is removed when Google sign-in lands in M2 |
 | Health (`/healthz`) and readiness (`/readyz`) endpoints | |
 | Docker Compose stack (PostgreSQL 16, app, optional Caddy HTTPS), deploy/backup/restore scripts, GitHub Actions CI | Public internet exposure — only after M2 replaces the PIN |
@@ -204,7 +205,8 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full description.
 - `app/ingestion/staging.py` — upload → preview → approve/reject, player identity decisions, restore.
 - `app/ingestion/scorecards.py` — JSON bundle format, bundled tournament and idempotent seed.
 - `app/analytics.py` — aggregates, profiles, match views and deterministic coaching rules.
-- `app/matchup.py` — Captain's room team-against-team report and dismissal parsing.
+- `app/matchup.py` — Captain's room team-against-team report, pivot points and dismissal parsing.
+- `app/ai/briefs.py` — AI brief shapes and validation.
 - `app/ai/` — optional OpenRouter analysis: server-built evidence packs, cache, daily cap, request log.
 - `app/sqlite_migration.py` — one-time SQLite import with verification.
 - `app/config.py` — environment configuration (`DATABASE_URL`, `PLACCRIC_ENV`), optional `.env` loading, password redaction.
@@ -258,7 +260,7 @@ One-off matches between any teams go in the built-in **Friendly Match** category
 
 Choose your team and the opposition. PlacCric compares them from the imported scorecards in the current Tournament filter: matches, wins batting first and chasing, average and highest scores, run rates, economy, recent form, head-to-head results, top batters and bowlers on both sides, how each side's batters get out and how their bowlers take wickets, and who dismissed whom in their meetings (read from the dismissal text). Sample-size warnings and data limits are always shown.
 
-Optionally add an OpenRouter key to get an **AI match plan** here, an **AI scouting report** on player profiles, an **AI comparison** on Compare players and AI answers in the coach. Setup, cost controls and exactly what is sent are in [docs/AI.md](docs/AI.md).
+Optionally add an OpenRouter key to get an **AI tactical brief** here, an **AI performance diagnosis** on player profiles, an **AI selection verdict** on Compare players, an **AI match debrief** on match pages and AI answers in the coach. Setup, cost controls and exactly what is sent are in [docs/AI.md](docs/AI.md).
 
 ### Statistical scope
 

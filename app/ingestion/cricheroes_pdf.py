@@ -22,6 +22,8 @@ BAT_ROW = re.compile(r'^\s*(?P<no>\d+)\s+(?P<name>\S.*?)\s{2,}(?P<status>\S.*?)\
 BOWL_ROW = re.compile(r'^\s*(?P<no>\d+)\s+(?P<name>\S.*?)\s{2,}(?P<o>\d+(?:\.\d)?)\s+(?P<m>\d+)\s+(?P<r>\d+)\s+'
                       r'(?P<w>\d+)\s+(?P<dots>\d+)\s+(?P<f>\d+)\s+(?P<s>\d+)\s+(?P<wd>\d+)\s+(?P<nb>\d+)\s+'
                       r'(?P<eco>[\d.]+|-)\s*$')
+# Fall of wickets entry, e.g. '39-2 (SHARIF HASAN (Rabbi), 5.4 ov)'; entries may wrap across lines.
+FOW = re.compile(r'(\d+)-(\d+)\s*\((.+?),\s*(\d+(?:\.\d)?)\s+ov\)')
 NUMBERED = re.compile(r'^\s*\d+\s+\S')
 EXTRAS = re.compile(r'^\s*Extras:\s*(?:\((?P<detail>[^)]*)\))?.*?(?P<n>\d+)\s*$')
 TOTAL = re.compile(r'^\s*Total:\s*Overs\s+(?P<ov>\d+(?:\.\d)?),\s*Wickets\s+(?P<wk>\d+)\s+(?P<runs>\d+)')
@@ -152,8 +154,15 @@ def parse(data):
         if 'Bowler' in line and 'Eco' in line:
             section = 'bowling'
             continue
-        if re.match(r'^\s*(To Bat|Did not bat|Yet to bat|Fall of Wickets)', line, re.I):
+        if re.match(r'^\s*Fall of Wickets', line, re.I):
+            section = 'fow'
+            cur['_fow'] = []
+            continue
+        if re.match(r'^\s*(To Bat|Did not bat|Yet to bat)', line, re.I):
             section = None
+            continue
+        if section == 'fow':
+            cur['_fow'].append(line.strip())
             continue
         e = EXTRAS.match(line)
         if e and section == 'batting':
@@ -193,6 +202,12 @@ def parse(data):
             raise ScorecardPdfError(f'Innings {no} ({inn["team"]}): no "Extras" line was found')
         if not inn['batting'] or not inn['bowling']:
             raise ScorecardPdfError(f'Innings {no} ({inn["team"]}): batting or bowling table is missing')
+        fow_text = ' '.join(inn.pop('_fow', []))
+        if fow_text:
+            inn['fall_of_wickets'] = [
+                {'wicket': int(w), 'runs': int(r), 'balls': balls_from_overs(o, f'Innings {no} fall of wickets'),
+                 'batter': clean_name(name)}
+                for r, w, name, o in FOW.findall(fow_text)]
 
     team1 = innings[0]['team']
     team2 = innings[1]['team'] if len(innings) > 1 else ''

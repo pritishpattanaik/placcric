@@ -65,6 +65,8 @@ def match(match_id: str, db=Depends(reader)):
     m = analytics.match_detail(db, match_id)
     if not m:
         raise ApiError(404, 'Match not found')
+    for inn in m['innings']:
+        inn['collapses'] = matchup.collapses(inn['fall_of_wickets'])
     return m
 
 
@@ -170,6 +172,14 @@ def captain_matchup(team: int, opponent: int, tournament=Depends(tournament_filt
     return matchup.matchup(db, team, opponent, tournament)
 
 
+@router.get('/compare', dependencies=[Depends(require_session)])
+def compare_players(a: str, b: str, tournament=Depends(tournament_filter), db=Depends(reader)):
+    cards = [matchup.player_card(db, pid, tournament) for pid in (a, b)]
+    if not all(cards):
+        raise ApiError(404, 'One of these players has no recorded performances in the selected tournament.')
+    return {'a': cards[0], 'b': cards[1]}
+
+
 @router.get('/ai/status', dependencies=[Depends(require_session)])
 def ai_status(db=Depends(reader)):
     return openrouter.status(db)
@@ -199,7 +209,11 @@ def ai_analyze(request: Request, body=Depends(json_body), s=Depends(require_csrf
                 if not isinstance(ids, list) or len(ids) != 2:
                     raise ValueError('Choose two players to compare')
                 pack = evidence.compare_pack(db, str(ids[0]), str(ids[1]), tournament)
-                subject, names = ' and '.join(p['player'] for p in pack['players']), {}
+                names = {'a': pack['players'][0]['player'], 'b': pack['players'][1]['player']}
+                subject = f"{names['a']} and {names['b']}"
+            elif kind == 'debrief':
+                pack = evidence.debrief_pack(db, str(body.get('match_id') or ''))
+                subject, names = f"{pack['match']} ({pack['date']})", {}
             else:
                 raise ValueError('Unknown analysis type')
         except LookupError as e:

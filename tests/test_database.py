@@ -90,6 +90,28 @@ class MigrationTests(unittest.TestCase):
         command.downgrade(alembic_config(self.url), '0002')
         self.assertNotIn('ai_requests', self.tables())
 
+    def test_0004_fall_of_wickets_rolls_back_without_touching_scorecards(self):
+        upgrade(self.url)
+        with self.engine.begin() as db:
+            db.execute(text("INSERT INTO teams(name) VALUES ('A'),('B')"))
+            db.execute(text("INSERT INTO matches(id,tournament_id,date,venue,team1,team2,winner,result,source_url,"
+                            "retrieved_at) SELECT '1', id, '2026-01-01','v',1,2,1,'A won','','t' FROM tournaments"))
+            db.execute(text("INSERT INTO innings(match_id,number,team_id,runs,wickets,balls,extras) "
+                            "VALUES ('1',1,1,120,3,150,5)"))
+            db.execute(text("INSERT INTO fall_of_wickets VALUES ('1',1,1,10,12,'X'),('1',1,2,40,50,'Y')"))
+            with self.assertRaises(Exception), db.begin_nested():
+                db.execute(text("INSERT INTO fall_of_wickets VALUES ('1',1,11,50,60,'Z')"))
+        command.downgrade(alembic_config(self.url), '0003')
+        self.assertNotIn('fall_of_wickets', self.tables())
+        with self.engine.connect() as db:
+            self.assertEqual(db.execute(text('SELECT count(*) FROM innings')).scalar_one(), 1)
+        upgrade(self.url)
+        with self.engine.begin() as db:
+            self.assertEqual(db.execute(text('SELECT count(*) FROM fall_of_wickets')).scalar_one(), 0)
+            db.execute(text("INSERT INTO fall_of_wickets VALUES ('1',1,1,10,12,'X')"))
+            db.execute(text("DELETE FROM matches"))
+            self.assertEqual(db.execute(text('SELECT count(*) FROM fall_of_wickets')).scalar_one(), 0)
+
     def test_constraints_reject_invalid_cricket_rows(self):
         upgrade(self.url)
         with self.engine.begin() as db:

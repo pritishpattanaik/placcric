@@ -142,6 +142,22 @@ class Bowling(Base):
     no_balls: Mapped[int] = mapped_column(Integer)
 
 
+class FallOfWicket(Base):
+    """Score and over at which each wicket fell, as printed on the scorecard (PDF imports).
+    batter is the name as printed; it is display text, not an identity."""
+    __tablename__ = 'fall_of_wickets'
+    __table_args__ = (ForeignKeyConstraint(['match_id', 'innings_number'], ['innings.match_id', 'innings.number'],
+                                           ondelete='CASCADE', name='fk_fall_of_wickets_innings'),
+                      CheckConstraint('wicket BETWEEN 1 AND 10', name='wicket_range'),
+                      CheckConstraint('runs >= 0 AND balls >= 0', name='non_negative'))
+    match_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    innings_number: Mapped[int] = mapped_column(Integer, primary_key=True)
+    wicket: Mapped[int] = mapped_column(Integer, primary_key=True)
+    runs: Mapped[int] = mapped_column(Integer)
+    balls: Mapped[int] = mapped_column(Integer)
+    batter: Mapped[str] = mapped_column(Text)
+
+
 class Note(Base):
     __tablename__ = 'notes'
     team_id: Mapped[int] = mapped_column(ForeignKey('teams.id'), primary_key=True)
@@ -257,4 +273,4 @@ class LoginAttempt(Base):
 
 
 CRICKET_TABLES = ('tournaments', 'teams', 'players', 'roster_entries', 'matches', 'innings', 'batting', 'bowling',
-                  'notes', 'import_log', 'import_batches', 'match_revisions', 'player_aliases', 'ai_requests')
+                  'notes', 'import_log', 'import_batches', 'match_revisions', 'player_aliases', 'ai_requests', 'fall_of_wickets')
