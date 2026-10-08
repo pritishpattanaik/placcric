@@ -57,6 +57,7 @@ Supporting modules: `app/config.py` (environment and `.env`), `app/db.py` (engin
 | `player_aliases` (0002) | `(team_id, alias_key)` | admin-confirmed scorecard names → player |
 | `tournaments.kind` (0003) | | `tournament` or `friendly`; migration creates the "Friendly Match" category |
 | `ai_requests` (0003) | `id` | AI request log and cache: time, kind, subject, model, cache key, status, token counts, answer, error (never the key) |
+| `fall_of_wickets` (0004) | `(match_id, innings_number, wicket)` | score and legal balls at each wicket, batter name as printed; parsed from the scorecard PDF's "Fall of Wickets" line, optional |
 
 ## Import flow
 
@@ -76,7 +77,7 @@ Player identity is never inferred from names: aliases exist only after an admin 
 
 ## AI boundary
 
-AI calls are made only from `POST /api/ai/analyze` (session + CSRF), after a user click. The server builds the evidence from the database; the browser sends only IDs of the teams/players to analyse and an optional question. The key stays server-side (environment only). See docs/AI.md.
+AI calls are made only from `POST /api/ai/analyze` (session + CSRF), after a user click. The server builds the evidence from the database; the browser sends only IDs of the teams/players to analyse and an optional question. The key stays server-side (environment only). The model must return one JSON object per brief kind; `app/ai/briefs.py` extracts and validates it (discarding any reasoning text) and the UI renders only validated fields. Pivot points (wickets by over phase, collapses, partnerships) are computed deterministically in `app/matchup.py` from fall of wickets. See docs/AI.md.
 
 ## Security boundary
 

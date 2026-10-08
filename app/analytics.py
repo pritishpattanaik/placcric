@@ -42,6 +42,7 @@ def match_list(db,team=None,tournament=None):
 
 def match_detail(db,mid):
  m=next((m for m in match_list(db) if m['id']==mid),None)
+ if m:m['max_balls']=db.execute(text('SELECT overs_per_innings*6 FROM tournaments WHERE id=:t'),{'t':m['tournament_id']}).scalar()
  if not m:return None
  for inn in m['innings']:
   args={'m':mid,'n':inn['number']}
@@ -49,6 +50,7 @@ def match_detail(db,mid):
   inn['bowling']=records(db,'SELECT b.*,p.name FROM bowling b JOIN players p ON p.id=b.player_id WHERE match_id=:m AND innings_number=:n ORDER BY position',args)
   for b in inn['batting']:b['strike_rate']=round(b['runs']*100/b['balls'],2) if b['balls'] else None
   for b in inn['bowling']:b['overs']=overs(b['balls']);b['economy']=round(b['runs']*6/b['balls'],2) if b['balls'] else None
+  inn['fall_of_wickets']=records(db,'SELECT wicket,runs,balls,batter FROM fall_of_wickets WHERE match_id=:m AND innings_number=:n ORDER BY wicket',args)
  return m
 
 def profile(db,pid,team=None,tournament=None):

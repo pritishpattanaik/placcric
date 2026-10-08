@@ -50,7 +50,10 @@ def score_view(record):
                          'batting': [{'player_id': r.get('player_id'), **{k: r[k] for k in BATTING_FIELDS}}
                                      for r in inn['batting']],
                          'bowling': [{'player_id': r.get('player_id'), **{k: r[k] for k in BOWLING_FIELDS}}
-                                     for r in inn['bowling']]}
+                                     for r in inn['bowling']],
+                         # Only present when known, so records without it keep their earlier hash.
+                         **({'fall_of_wickets': [[f['wicket'], f['runs'], f['balls']] for f in inn['fall_of_wickets']]}
+                            if inn.get('fall_of_wickets') else {})}
                         for inn in record['innings']]}
 
 
@@ -156,6 +159,16 @@ def check_record(record, rules, require_player_ids=True):
             if conceded != inn['runs'] - byes:
                 warnings.append(f'{where}: bowlers conceded {conceded}, expected {inn["runs"] - byes} '
                                 '(total minus byes and leg byes); check for penalty runs')
+        fow = inn.get('fall_of_wickets') or []
+        if fow:
+            ordered = all(a['wicket'] + 1 == b['wicket'] and a['runs'] <= b['runs'] and a['balls'] <= b['balls']
+                          for a, b in zip(fow, fow[1:]))
+            if (not ordered or fow[0]['wicket'] != 1 or fow[-1]['runs'] > inn['runs'] or fow[-1]['balls'] > inn['balls']
+                    or len(fow) > inn['wickets']):
+                warnings.append(f'{where}: fall of wickets is inconsistent with the innings; it will not be stored')
+                inn['fall_of_wickets'] = []
+            elif len(fow) != inn['wickets']:
+                warnings.append(f'{where}: fall of wickets lists {len(fow)} of {inn["wickets"]} wickets')
         dismissed = sum(1 for r in bat if not r['not_out'])
         if dismissed != inn['wickets']:
             warnings.append(f'{where}: {dismissed} batters dismissed but {inn["wickets"]} wickets recorded '
@@ -196,6 +209,10 @@ def snapshot(db, match_id):
                 'SELECT b.player_id, p.name, b.balls, b.runs, b.wickets, b.dots, b.wides, b.no_balls FROM bowling b '
                 'JOIN players p ON p.id=b.player_id WHERE match_id=:id AND innings_number=:n ORDER BY position'),
                 args).mappings()]})
+        fow = [dict(r) for r in db.execute(text('SELECT wicket, runs, balls, batter FROM fall_of_wickets '
+                                                'WHERE match_id=:id AND innings_number=:n ORDER BY wicket'), args).mappings()]
+        if fow:
+            rec['innings'][-1]['fall_of_wickets'] = fow
     return rec
 
 
@@ -254,6 +271,10 @@ def publish(db, record, tournament_id, created_by, batch_id=None, note='', updat
                             'dismissal,not_out) VALUES (:m,:n,:p,:pos,:runs,:balls,:fours,:sixes,:dis,:no)'),
                        dict(m=record['id'], n=num, p=r['player_id'], pos=pos, runs=r['runs'], balls=r['balls'],
                             fours=r['fours'], sixes=r['sixes'], dis=r.get('dismissal') or '', no=r['not_out']))
+        for f in inn.get('fall_of_wickets') or []:
+            db.execute(text('INSERT INTO fall_of_wickets(match_id,innings_number,wicket,runs,balls,batter) '
+                            'VALUES (:m,:n,:w,:r,:b,:bat)'),
+                       dict(m=record['id'], n=num, w=f['wicket'], r=f['runs'], b=f['balls'], bat=f.get('batter') or ''))
         for pos, r in enumerate(inn['bowling'], 1):
             db.execute(text(player_sql), {'id': r['player_id'], 'name': r['name']})
             db.execute(text('INSERT INTO bowling(match_id,innings_number,player_id,position,balls,runs,wickets,dots,'
@@ -289,6 +310,10 @@ def diff(old, new):
     for no, (oi, ni) in enumerate(zip(old['innings'], new['innings']), 1):
         for k in INNINGS_FIELDS:
             add(f'Innings {no} {k}', oi[k], ni[k])
+        def fow_text(inn):
+            fow = inn.get('fall_of_wickets') or []
+            return ', '.join(f"{f['runs']}-{f['wicket']} ({overs(f['balls'])})" for f in fow) or 'not recorded'
+        add(f'Innings {no} fall of wickets', fow_text(oi), fow_text(ni))
         for kind, fields in (('batting', BATTING_FIELDS), ('bowling', BOWLING_FIELDS)):
             before = {r['player_id']: r for r in oi[kind]}
             after = {r.get('player_id') or ('name:' + r['name']): r for r in ni[kind]}
