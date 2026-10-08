@@ -1,0 +1,9 @@
+# Runtime dependencies (Python 3.10+). Install into a virtual environment:
+#   python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+fastapi==0.118.3
+uvicorn==0.53.0
+SQLAlchemy==2.0.54
+alembic==1.16.5
+psycopg[binary]==3.2.13
+# Test client for the HTTP tests.
+httpx==0.28.1
