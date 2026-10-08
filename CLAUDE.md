@@ -27,7 +27,7 @@ Improve a cricket analytics app for tournament 2194193, with UCC club views. Pri
 - Preserve hashed secrets, session expiry, CSRF checks, login throttling, the Host allowlist and parameterised SQL. Default to loopback binding; containers publish ports on 127.0.0.1 only, with public traffic only through the Caddy HTTPS profile. Do not recommend public exposure while PIN login remains. Never hardcode a usable production secret or PIN.
 - Keep Google client secrets and tokens out of browser code, git, logs and error messages. Never print database passwords (use `redact_url`).
 - Never commit runtime databases, `.env`, secrets, auth sessions, dumps, backups or private uploaded scorecards. Public fixtures need a deliberate provenance/permission review.
-- Coaching is deterministic. Do not describe it as an LLM. Optional AI work is a separate milestone and must declare provider, cost limits and which personal data is sent.
+- The rules-based coach is deterministic; AI answers come only from the optional OpenRouter integration (docs/AI.md) and must stay labelled as AI-generated. AI may only receive server-built evidence from imported data (never IDs, PINs, files or keys), must be triggered by a user click, and must keep the daily cap, cache and request log. Tests must mock OpenRouter.
 
 ## Workflow
 

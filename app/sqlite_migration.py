@@ -179,7 +179,9 @@ def migrate(sqlite_path, engine, database_url, dry_run=False):
     conn = engine.connect()
     trans = conn.begin()
     try:
-        occupied = [t for t in CRICKET_TABLES if conn.execute(text(f'SELECT EXISTS (SELECT 1 FROM {t})')).scalar_one()]
+        # The built-in "Friendly Match" category (migration 0003) is not user data.
+        occupied = [t for t in CRICKET_TABLES if conn.execute(text(
+            f"SELECT EXISTS (SELECT 1 FROM {t}" + (" WHERE kind <> 'friendly')" if t == 'tournaments' else ')'))).scalar_one()]
         if occupied:
             raise MigrationError('Target PostgreSQL database already contains data in: ' + ', '.join(occupied) +
                                  '. Migrate into a freshly upgraded, unseeded database.')

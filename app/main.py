@@ -26,12 +26,14 @@ def error(status, message):
     return JSONResponse({'error': message}, status_code=status)
 
 
-def create_app(engine, allowed_hosts, database_url=None, secure_cookies=False, upload_dir=None):
+def create_app(engine, allowed_hosts, database_url=None, secure_cookies=False, upload_dir=None, ai_transport=None):
     """allowed_hosts: exact Host header values, e.g. ['localhost:8000', '127.0.0.1:8000']."""
     app = FastAPI(title='PlacCric', docs_url=None, redoc_url=None, openapi_url=None)
     app.state.engine = engine
     app.state.secure_cookies = secure_cookies
     app.state.upload_dir = upload_dir or str(ROOT / 'uploads')
+    # Tests inject an httpx mock transport here; production uses the real network.
+    app.state.ai_transport = ai_transport
     allowed = set(allowed_hosts)
 
     @app.middleware('http')

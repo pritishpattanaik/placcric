@@ -49,9 +49,12 @@ class Tournament(Base):
     __tablename__ = 'tournaments'
     __table_args__ = (UniqueConstraint('provider', 'external_id', name='uq_tournaments_provider_external_id'),
                       CheckConstraint('overs_per_innings BETWEEN 1 AND 50', name='overs_range'),
-                      CheckConstraint('max_overs_per_bowler BETWEEN 1 AND overs_per_innings', name='bowler_overs_range'))
+                      CheckConstraint('max_overs_per_bowler BETWEEN 1 AND overs_per_innings', name='bowler_overs_range'),
+                      CheckConstraint("kind IN ('tournament', 'friendly')", name='kind'))
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     provider: Mapped[str] = mapped_column(String(32), server_default='cricheroes')
+    # 'friendly' collects one-off matches between any teams; overs vary per match.
+    kind: Mapped[str] = mapped_column(String(16), server_default='tournament')
     external_id: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     name: Mapped[str] = mapped_column(Text, unique=True)
     slug: Mapped[str] = mapped_column(Text, server_default='')
@@ -206,6 +209,26 @@ class PlayerAlias(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class AiRequest(Base):
+    """Audit log and cache of AI analyses: what was asked, which model, token usage, and the answer.
+    The evidence sent is identified by its hash; the API key is never stored."""
+    __tablename__ = 'ai_requests'
+    __table_args__ = (CheckConstraint("status IN ('ok', 'error')", name='status'),
+                      Index('ix_ai_requests_created', 'created_at'), Index('ix_ai_requests_cache', 'cache_key'))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[str] = mapped_column(Text)
+    kind: Mapped[str] = mapped_column(String(32))
+    subject: Mapped[str] = mapped_column(Text)
+    model: Mapped[str] = mapped_column(Text)
+    cache_key: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(16))
+    prompt_tokens: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    completion_tokens: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    answer: Mapped[str] = mapped_column(Text, server_default='')
+    error: Mapped[str] = mapped_column(Text, server_default='')
+
+
 # --- Interim single-user PIN authentication -------------------------------------------------
 # Retained only until Milestone 2 replaces it with Google OpenID Connect. These tables are never
 # populated by the SQLite migration (PIN hashes, sessions and login attempts are not migrated).
@@ -234,4 +257,4 @@ class LoginAttempt(Base):
 
 
 CRICKET_TABLES = ('tournaments', 'teams', 'players', 'roster_entries', 'matches', 'innings', 'batting', 'bowling',
-                  'notes', 'import_log', 'import_batches', 'match_revisions', 'player_aliases')
+                  'notes', 'import_log', 'import_batches', 'match_revisions', 'player_aliases', 'ai_requests')

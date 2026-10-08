@@ -18,9 +18,12 @@ PlacCric is a Python backend (FastAPI, SQLAlchemy 2, Alembic) using **PostgreSQL
 | **CricHeroes scorecard PDF reader** (the “Download Scorecard” file) and scorecard JSON | UI accessibility/mobile regression testing beyond the checks listed in the PR (M4) |
 | Match revisions with restore; identical re-imports change nothing | |
 | Dashboard, match centre, player profiles, team filters, comparison, captain notes | Production configuration, HTTPS, trusted hosts and backup tooling (M5) |
-| Deterministic, evidence-based coaching rules (no LLM) | CricHeroes adapter — blocked until an authorised export or integration is confirmed |
+| Deterministic, evidence-based coaching rules | CricHeroes adapter — blocked until an authorised export or integration is confirmed |
+| **Friendly Match** category for one-off matches between any teams | |
+| **Captain's room team-against-team report**: records, run rates, head to head, threats, how wickets fall, who dismissed whom | |
+| **Optional AI analysis via OpenRouter** (match plan, scouting report, player comparison, coach answers) with daily cap, cache and request log — see [docs/AI.md](docs/AI.md) | |
 | **Interim** single-user PIN login (hashed PIN, server sessions, CSRF, throttling) | PIN login is removed when Google sign-in lands in M2 |
-| Health (`/healthz`) and readiness (`/readyz`) endpoints | Optional LLM coaching — separate future milestone with cost and privacy controls |
+| Health (`/healthz`) and readiness (`/readyz`) endpoints | |
 | Docker Compose stack (PostgreSQL 16, app, optional Caddy HTTPS), deploy/backup/restore scripts, GitHub Actions CI | Public internet exposure — only after M2 replaces the PIN |
 
 **Data coverage:** the bundled snapshot contains five completed matches and 15 public club listings, collected on 7 October 2026. It is not a live feed or a complete season. Club listings are not confirmed tournament squads. Scorecard identities use CricHeroes player IDs; names in club listings are never merged with them automatically.
@@ -201,6 +204,8 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full description.
 - `app/ingestion/staging.py` — upload → preview → approve/reject, player identity decisions, restore.
 - `app/ingestion/scorecards.py` — JSON bundle format, bundled tournament and idempotent seed.
 - `app/analytics.py` — aggregates, profiles, match views and deterministic coaching rules.
+- `app/matchup.py` — Captain's room team-against-team report and dismissal parsing.
+- `app/ai/` — optional OpenRouter analysis: server-built evidence packs, cache, daily cap, request log.
 - `app/sqlite_migration.py` — one-time SQLite import with verification.
 - `app/config.py` — environment configuration (`DATABASE_URL`, `PLACCRIC_ENV`), optional `.env` loading, password redaction.
 - `app/cli.py` — explicit administration commands.
@@ -244,6 +249,16 @@ Use `data/scorecards.json` as the executable example. A bundle contains a `match
 Current restrictions: if a source link is given it must be this match's CricHeroes scorecard (and the tournament's link name, when set); exactly two innings; a winner matching one team; the tournament's overs per innings and per bowler. **Ties, no-results, super overs, other providers and other competition rules are not supported** and are rejected rather than forced into a misleading winner record.
 
 Overs use cricket notation: `22.3` means 135 balls, not 22.3 decimal overs. Internally overs are stored as integer legal balls. Batting runs plus extras, and bowling legal balls, must reconcile with innings totals (errors block approval). Extras breakdowns, bowler runs versus byes/leg byes, and dismissals versus wickets are checked as warnings. Failed validation leaves stored scores unchanged.
+
+### Friendly matches
+
+One-off matches between any teams go in the built-in **Friendly Match** category (created by migration 0003 and by `seed`). Upload their scorecard PDFs exactly like tournament matches, choosing "Friendly Match (friendlies)". Overs limits are the widest allowed (50/50) because friendlies vary; the totals must still reconcile. Use the Tournament filter to see friendlies on their own; "All tournaments" includes them.
+
+### Captain's room and AI
+
+Choose your team and the opposition. PlacCric compares them from the imported scorecards in the current Tournament filter: matches, wins batting first and chasing, average and highest scores, run rates, economy, recent form, head-to-head results, top batters and bowlers on both sides, how each side's batters get out and how their bowlers take wickets, and who dismissed whom in their meetings (read from the dismissal text). Sample-size warnings and data limits are always shown.
+
+Optionally add an OpenRouter key to get an **AI match plan** here, an **AI scouting report** on player profiles, an **AI comparison** on Compare players and AI answers in the coach. Setup, cost controls and exactly what is sent are in [docs/AI.md](docs/AI.md).
 
 ### Statistical scope
 

@@ -275,6 +275,8 @@ Caddy sends HSTS, redirects HTTP to HTTPS and forwards only requests for your do
 | `COMPOSE_PROFILES` | extra services | unset | unset | `https` |
 | `PLACCRIC_DOMAIN` | domain for Caddy | unset | unset | your domain |
 | `DATABASE_URL`, `TEST_DATABASE_URL` | only for running without Docker (venv) | optional | unused | unused |
+| `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | optional AI analysis (docs/AI.md) | optional | optional | optional |
+| `PLACCRIC_AI_DAILY_LIMIT`, `PLACCRIC_AI_MAX_OUTPUT_TOKENS` | AI cost caps | 25 / 1500 | 25 / 1500 | 25 / 1500 |
 
 The app container builds its own `DATABASE_URL` from the `POSTGRES_*` values. If you change `POSTGRES_PASSWORD` after the database volume exists, the database keeps the old password. Change it inside PostgreSQL first (`ALTER ROLE placcric PASSWORD '…'`), then update `.env`.
 
