@@ -10,7 +10,17 @@ One milestone per branch and pull request. Each PR reports changes, test results
 | CricHeroes adapter | **PDF adapter implemented** for the per-match “Download Scorecard” file. No API/bulk export confirmed; automated fetching not built (robots.txt/terms unchecked) |
 | M4 — UI and analytics | Planned |
 | M5 — Release readiness | Partly delivered early: Docker Compose stack, dev/stage/prod workflow, deploy/backup/restore scripts, CI, HTTPS profile, health/readiness. Public exposure waits for M2 |
-| Optional LLM coaching | Future, separate; explicit cost and privacy controls required |
+| Captain's room match-ups, Friendly Match category, optional AI analysis (OpenRouter) | **Implemented** (pending review) — see below and docs/AI.md |
+
+## Captain's room, friendlies and AI (owner request, migration 0003)
+
+Delivered:
+- `tournaments.kind` with a built-in "Friendly Match" category for one-off matches between any teams (50/50 overs limits; reconciliation still enforced; no tournament-title warning).
+- Captain's room rebuilt: team-against-team table (records, batting first/chasing, average/highest/lowest scores, run rate, wickets, economy, recent form), head to head, both sides' top batters and bowlers, dismissal-type profiles and "who dismissed whom" parsed from dismissal text in the same scorecard (bowlers matched by stored name or admin-confirmed alias only). Always shows sample-size warnings and data limits.
+- Optional AI via OpenRouter (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`): match plan, scouting report, player comparison, coach answers. Evidence is built on the server from imported data; no IDs, PIN or files are sent; notes only on opt-in. Daily request cap, output-token cap, response cache and `ai_requests` log. Only user clicks trigger requests.
+- Clearer messages for empty tournament scope; links to "Add a tournament".
+
+Not done: AI over ball-by-ball data (none exists), saved history browser for past AI answers, per-user AI limits (needs M2 accounts), automatic tournament creation.
 
 ## Baseline (before M1)
 

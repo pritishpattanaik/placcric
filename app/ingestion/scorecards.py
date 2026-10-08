@@ -18,6 +18,7 @@ BUNDLED_TOURNAMENT = {'external_id': '2194193', 'name': 'Diwhyn Choice T25 Crick
                       'slug': 'diwhyn-choice-t25-cricket-carnival-season-2', 'overs_per_innings': 25,
                       'max_overs_per_bowler': 5}
 BUNDLED_RULES = rules_for(BUNDLED_TOURNAMENT)
+FRIENDLY = {'name': 'Friendly Match', 'overs_per_innings': 50, 'max_overs_per_bowler': 50}
 
 
 def overs_to_balls(value):
@@ -120,6 +121,14 @@ def ensure_tournament(db, spec=None):
                       {'p': spec.get('provider', 'cricheroes'), 'e': spec['external_id']}).mappings().one()
 
 
+def ensure_friendly(db):
+    """The "Friendly Match" category for one-off matches between any teams (normally created by migration 0003)."""
+    db.execute(text("INSERT INTO tournaments(provider, external_id, name, slug, overs_per_innings, max_overs_per_bowler, "
+                    "kind) SELECT 'placcric', NULL, :name, '', :o, :m, 'friendly' "
+                    "WHERE NOT EXISTS (SELECT 1 FROM tournaments WHERE kind = 'friendly')"),
+               {'name': FRIENDLY['name'], 'o': FRIENDLY['overs_per_innings'], 'm': FRIENDLY['max_overs_per_bowler']})
+
+
 def import_bundle(db, bundle, source='local JSON', tournament=None, created_by='system'):
     """Validate, then publish every changed match in the bundle (identical matches are left untouched).
 
@@ -144,6 +153,7 @@ def seed(db):
     roster = json.loads(BUNDLED_ROSTERS.read_text(encoding='utf-8'))
     bundle = json.loads(BUNDLED_SCORECARDS.read_text(encoding='utf-8'))
     tournament = ensure_tournament(db)
+    ensure_friendly(db)
     validate(bundle, rules_for(tournament))
     added_listings = 0
     for t in roster['teams']:

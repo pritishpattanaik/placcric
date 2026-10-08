@@ -96,7 +96,8 @@ def create_batch(engine, upload_dir, data, filename, kind, tournament_id, match_
         records = [record]
         warnings += parsed['warnings']
         source.update(parsed['source'])
-        if not _same_title(parsed['source']['tournament_title'], tournament['name']):
+        # A friendly accepts any match, so its PDF title is not expected to match the category name.
+        if tournament.get('kind') != 'friendly' and not _same_title(parsed['source']['tournament_title'], tournament['name']):
             warnings.append(f'The PDF says "{parsed["source"]["tournament_title"]}" but you chose the tournament '
                             f'"{tournament["name"]}". Check you picked the right tournament.')
     else:

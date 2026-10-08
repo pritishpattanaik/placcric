@@ -16,6 +16,8 @@ app/api/routes.py  JSON API (/api/…)
 app/api/security.py  JSON body guard (2 MB, application/json, Origin check), session, CSRF
 app/auth/pin.py    interim PIN auth (removed in M2; Google OIDC planned in app/auth/)
 app/analytics.py   aggregates, profiles, match views, deterministic coaching
+app/matchup.py     Captain's room team-against-team report, dismissal parsing
+app/ai/            optional OpenRouter analysis: evidence.py (server-built packs), openrouter.py (cache, cap, log)
 app/ingestion/  records.py (provider-neutral records, rule checks, publish + revisions, diffs)
                  cricheroes_pdf.py (scorecard PDF reader) · staging.py (upload → preview → approve)
                  scorecards.py (JSON bundles, bundled tournament, seed)
@@ -53,6 +55,8 @@ Supporting modules: `app/config.py` (environment and `.env`), `app/db.py` (engin
 | `import_batches` (0002) | `id` | uploaded file metadata, private raw file name (SHA-256), parsed records (JSONB), status staged/approved/rejected, reviewer |
 | `match_revisions` (0002) | `(match_id, number)` | every published version of a match as JSONB with a score hash; the scorecard tables hold the latest |
 | `player_aliases` (0002) | `(team_id, alias_key)` | admin-confirmed scorecard names → player |
+| `tournaments.kind` (0003) | | `tournament` or `friendly`; migration creates the "Friendly Match" category |
+| `ai_requests` (0003) | `id` | AI request log and cache: time, kind, subject, model, cache key, status, token counts, answer, error (never the key) |
 
 ## Import flow
 
@@ -69,6 +73,10 @@ restore: publish an old revision's content as a new revision
 ```
 
 Player identity is never inferred from names: aliases exist only after an admin approves them, and they are scoped to a team.
+
+## AI boundary
+
+AI calls are made only from `POST /api/ai/analyze` (session + CSRF), after a user click. The server builds the evidence from the database; the browser sends only IDs of the teams/players to analyse and an optional question. The key stays server-side (environment only). See docs/AI.md.
 
 ## Security boundary
 

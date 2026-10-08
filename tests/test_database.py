@@ -68,10 +68,27 @@ class MigrationTests(unittest.TestCase):
         with self.engine.connect() as db:
             self.assertEqual(db.execute(text('SELECT count(*) FROM matches')).scalar_one(), 1)
 
-    def test_0002_on_an_empty_database_creates_no_tournament(self):
-        upgrade(self.url)
+    def test_empty_database_gets_only_the_friendly_category(self):
+        upgrade(self.url, '0002')
         with self.engine.connect() as db:
             self.assertEqual(db.execute(text('SELECT count(*) FROM tournaments')).scalar_one(), 0)
+        upgrade(self.url)
+        with self.engine.connect() as db:
+            rows = db.execute(text('SELECT name, kind, overs_per_innings FROM tournaments')).all()
+        self.assertEqual([tuple(r) for r in rows], [('Friendly Match', 'friendly', 50)])
+
+    def test_0003_downgrade_refuses_to_orphan_friendly_matches(self):
+        upgrade(self.url)
+        with self.engine.begin() as db:
+            db.execute(text("INSERT INTO teams(name) VALUES ('A'),('B')"))
+            db.execute(text("INSERT INTO matches(id,tournament_id,date,venue,team1,team2,winner,result,source_url,"
+                            "retrieved_at) SELECT '1', id, '2026-01-01','v',1,2,1,'A won','','t' FROM tournaments"))
+        with self.assertRaises(Exception):
+            command.downgrade(alembic_config(self.url), '0002')
+        with self.engine.begin() as db:
+            db.execute(text('DELETE FROM matches'))
+        command.downgrade(alembic_config(self.url), '0002')
+        self.assertNotIn('ai_requests', self.tables())
 
     def test_constraints_reject_invalid_cricket_rows(self):
         upgrade(self.url)

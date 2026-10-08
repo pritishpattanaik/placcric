@@ -272,5 +272,5 @@ class ImportTests(PostgresTestCase):
                     {**T20, 'name': 'Other', 'external_id': '', 'slug': 'Bad Slug'}):
             self.assertEqual(self.post('/api/tournaments', bad).status_code, 400, bad)
         names = [t['name'] for t in self.client.get('/api/tournaments').json()]
-        self.assertEqual(sorted(names), sorted(['Diwhyn Choice T25 Cricket Carnival — Season 2', T20['name']]))
+        self.assertEqual(sorted(names), sorted(['Diwhyn Choice T25 Cricket Carnival — Season 2', 'Friendly Match', T20['name']]))
         self.assertEqual(self.client.get('/api/summary?tournament=abc').status_code, 400)

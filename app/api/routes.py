@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from .. import analytics
+from .. import analytics, matchup
+from ..ai import evidence, openrouter
 from ..auth import pin
 from ..ingestion import staging
 from .security import COOKIE, ApiError, current_session, json_body, require_admin, require_csrf, require_session, upload_body
@@ -85,7 +86,8 @@ def players(q: str = '', min: str = '0', sort: str = 'runs', team=Depends(team_f
 def player(player_id: str, team=Depends(team_filter), tournament=Depends(tournament_filter), db=Depends(reader)):
     p = analytics.profile(db, player_id, team, tournament)
     if not p:
-        raise ApiError(404, 'Player not found')
+        raise ApiError(404, 'No recorded performances for this player in the selected tournament or team. '
+                            'Choose "All tournaments" to see every match.' if (tournament or team) else 'Player not found')
     return p
 
 
@@ -155,6 +157,63 @@ def coach(body=Depends(json_body), s=Depends(require_csrf), db=Depends(reader)):
         raise ValueError('Question must be at most 1000 characters')
     return {'answer': analytics.coach(db, str(body.get('player_id', '')), question),
             'mode': 'Evidence-based rules; no LLM connected'}
+
+
+def _int(value, field):
+    if isinstance(value, bool) or not isinstance(value, (int, str)) or not str(value).strip().isdigit():
+        raise ValueError(f'{field} is required')
+    return int(value)
+
+
+@router.get('/captain/matchup', dependencies=[Depends(require_session)])
+def captain_matchup(team: int, opponent: int, tournament=Depends(tournament_filter), db=Depends(reader)):
+    return matchup.matchup(db, team, opponent, tournament)
+
+
+@router.get('/ai/status', dependencies=[Depends(require_session)])
+def ai_status(db=Depends(reader)):
+    return openrouter.status(db)
+
+
+@router.post('/ai/analyze')
+def ai_analyze(request: Request, body=Depends(json_body), s=Depends(require_csrf)):
+    """Build the evidence on the server, then ask the configured model. Never triggered automatically."""
+    kind = body.get('kind')
+    question = body.get('question') or ''
+    if not isinstance(question, str) or len(question) > 1000:
+        raise ValueError('Question must be at most 1000 characters')
+    tournament = body.get('tournament') or None
+    tournament = _int(tournament, 'Tournament') if tournament else None
+    with request.app.state.engine.connect() as db:
+        try:
+            if kind == 'matchup':
+                team, opponent = _int(body.get('team'), 'Your team'), _int(body.get('opponent'), 'Opposition')
+                pack = evidence.matchup_pack(db, team, opponent, tournament, bool(body.get('include_notes')))
+                names = {'team': pack['team']['team'], 'opponent': pack['opponent']['team']}
+                subject = f"{names['team']} vs {names['opponent']}"
+            elif kind == 'player':
+                pack = evidence.player_pack(db, str(body.get('player_id') or ''), tournament)
+                subject, names = pack['player'], {}
+            elif kind == 'compare':
+                ids = body.get('player_ids')
+                if not isinstance(ids, list) or len(ids) != 2:
+                    raise ValueError('Choose two players to compare')
+                pack = evidence.compare_pack(db, str(ids[0]), str(ids[1]), tournament)
+                subject, names = ' and '.join(p['player'] for p in pack['players']), {}
+            else:
+                raise ValueError('Unknown analysis type')
+        except LookupError as e:
+            raise ApiError(404, str(e))
+    try:
+        result = openrouter.analyze(request.app.state.engine, kind, subject, pack, question.strip(),
+                                    refresh=bool(body.get('refresh')), transport=request.app.state.ai_transport, **names)
+    except openrouter.AiNotConfigured as e:
+        raise ApiError(503, str(e))
+    except openrouter.AiError as e:
+        raise ApiError(502, str(e))
+    return {**result, 'subject': subject, 'evidence': pack, 'disclosure':
+            'Sent to OpenRouter: the team and player names and statistics in "evidence"'
+            + (' and your match plan notes' if kind == 'matchup' and body.get('include_notes') else '') + '.'}
 
 
 @router.get('/tournaments', dependencies=[Depends(require_session)])

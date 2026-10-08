@@ -73,7 +73,7 @@ def summary(db,team=None,tournament=None):
  return dict(teams=ts,completed=len(ms),recorded_runs=runs,batting_players=len([p for p in ps if p['innings']]),roster_entries=db.execute(text('SELECT count(*) FROM roster_entries')).scalar_one(),matches=ms,batting_leaders=sorted(ps,key=lambda p:(-p['runs'],p['name']))[:5],bowling_leaders=sorted([p for p in ps if p['bowling_balls']],key=lambda p:(-p['wickets'],p['economy']))[:5],coverage=coverage(db))
 
 def tournaments(db):
- return records(db,'SELECT tr.id,tr.provider,tr.external_id,tr.name,tr.slug,tr.overs_per_innings,tr.max_overs_per_bowler,count(m.id) matches,min(m.date) first_match,max(m.date) last_match FROM tournaments tr LEFT JOIN matches m ON m.tournament_id=tr.id GROUP BY tr.id ORDER BY tr.name '+C)
+ return records(db,'SELECT tr.id,tr.provider,tr.kind,tr.external_id,tr.name,tr.slug,tr.overs_per_innings,tr.max_overs_per_bowler,count(m.id) matches,min(m.date) first_match,max(m.date) last_match FROM tournaments tr LEFT JOIN matches m ON m.tournament_id=tr.id GROUP BY tr.id ORDER BY tr.name '+C)
 
 def coverage(db):
  return dict(completed_scorecards=db.execute(text('SELECT count(*) FROM matches')).scalar_one(),tournaments=tournaments(db),rosters='Public club listings; not confirmed tournament squads',ball_by_ball=False,live_sync=False)
