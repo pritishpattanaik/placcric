@@ -4,17 +4,19 @@ from .ingestion.scorecards import overs
 
 # Byte-order collation keeps name ordering identical to the previous SQLite (BINARY) behaviour.
 C='COLLATE "C"'
+# Optional tournament filter; :tour is NULL for all tournaments.
+TF='(CAST(:tour AS integer) IS NULL OR m.tournament_id=:tour)'
 
 def records(db,sql,args=None):return [dict(r) for r in db.execute(text(sql),args or {}).mappings()]
-def teams(db):
- ts=records(db,'SELECT t.*, (SELECT count(*) FROM roster_entries r WHERE r.team_id=t.id) club_listings,(SELECT count(*) FROM innings i WHERE i.team_id=t.id) played,(SELECT count(*) FROM matches m WHERE m.winner=t.id) wins FROM teams t ORDER BY name '+C)
+def teams(db,tournament=None):
+ ts=records(db,'SELECT t.*, (SELECT count(*) FROM roster_entries r WHERE r.team_id=t.id) club_listings,(SELECT count(*) FROM innings i JOIN matches m ON m.id=i.match_id WHERE i.team_id=t.id AND '+TF+') played,(SELECT count(*) FROM matches m WHERE m.winner=t.id AND '+TF+') wins FROM teams t ORDER BY name '+C,{'tour':tournament})
  for t in ts:t['losses']=t['played']-t['wins']
  return ts
 
-def players(db,team=None):
+def players(db,team=None,tournament=None):
  ps=records(db,'SELECT * FROM players ORDER BY name '+C)
- bats=records(db,'SELECT b.*,i.team_id,m.date FROM batting b JOIN innings i ON i.match_id=b.match_id AND i.number=b.innings_number JOIN matches m ON m.id=b.match_id')
- bowls=records(db,'SELECT b.*, CASE WHEN b.innings_number=1 THEN m.team2 ELSE m.team1 END team_id,m.date FROM bowling b JOIN matches m ON m.id=b.match_id')
+ bats=records(db,'SELECT b.*,i.team_id,m.date FROM batting b JOIN innings i ON i.match_id=b.match_id AND i.number=b.innings_number JOIN matches m ON m.id=b.match_id WHERE '+TF,{'tour':tournament})
+ bowls=records(db,'SELECT b.*, CASE WHEN b.innings_number=1 THEN m.team2 ELSE m.team1 END team_id,m.date FROM bowling b JOIN matches m ON m.id=b.match_id WHERE '+TF,{'tour':tournament})
  out=[];tn={t['id']:t['name'] for t in teams(db)}
  for p in ps:
   ba=[r for r in bats if r['player_id']==p['id'] and (not team or r['team_id']==team)]
@@ -28,10 +30,10 @@ def players(db,team=None):
   out.append(p)
  return out
 
-def match_list(db,team=None):
- sql='SELECT m.*,a.name team1_name,b.name team2_name FROM matches m JOIN teams a ON a.id=m.team1 JOIN teams b ON b.id=m.team2'
- args={}
- if team:sql+=' WHERE m.team1=:team OR m.team2=:team';args={'team':team}
+def match_list(db,team=None,tournament=None):
+ sql='SELECT m.*,a.name team1_name,b.name team2_name,tr.name tournament_name FROM matches m JOIN teams a ON a.id=m.team1 JOIN teams b ON b.id=m.team2 JOIN tournaments tr ON tr.id=m.tournament_id WHERE '+TF
+ args={'tour':tournament}
+ if team:sql+=' AND (m.team1=:team OR m.team2=:team)';args['team']=team
  ms=records(db,sql+' ORDER BY m.date DESC,m.id '+C+' DESC',args)
  for m in ms:
   m['innings']=records(db,'SELECT i.*,t.name team_name FROM innings i JOIN teams t ON t.id=i.team_id WHERE match_id=:m ORDER BY number',{'m':m['id']})
@@ -49,24 +51,32 @@ def match_detail(db,mid):
   for b in inn['bowling']:b['overs']=overs(b['balls']);b['economy']=round(b['runs']*6/b['balls'],2) if b['balls'] else None
  return m
 
-def profile(db,pid,team=None):
- p=next((p for p in players(db,team) if p['id']==pid),None)
+def profile(db,pid,team=None,tournament=None):
+ p=next((p for p in players(db,team,tournament) if p['id']==pid),None)
  if not p:return None
- p['batting_history']=records(db,'SELECT b.*,m.date,m.source_url,t.name team_name FROM batting b JOIN matches m ON m.id=b.match_id JOIN innings i ON i.match_id=b.match_id AND i.number=b.innings_number JOIN teams t ON t.id=i.team_id WHERE player_id=:p'+(' AND i.team_id=:team' if team else '')+' ORDER BY m.date,m.id '+C,{'p':pid,'team':team})
- p['bowling_history']=records(db,'SELECT b.*,m.date,m.source_url FROM bowling b JOIN matches m ON m.id=b.match_id WHERE player_id=:p'+(' AND CASE WHEN b.innings_number=1 THEN m.team2 ELSE m.team1 END=:team' if team else '')+' ORDER BY m.date,m.id '+C,{'p':pid,'team':team})
+ p['batting_history']=records(db,'SELECT b.*,m.date,m.source_url,t.name team_name FROM batting b JOIN matches m ON m.id=b.match_id JOIN innings i ON i.match_id=b.match_id AND i.number=b.innings_number JOIN teams t ON t.id=i.team_id WHERE player_id=:p AND '+TF+(' AND i.team_id=:team' if team else '')+' ORDER BY m.date,m.id '+C,{'p':pid,'team':team,'tour':tournament})
+ p['bowling_history']=records(db,'SELECT b.*,m.date,m.source_url FROM bowling b JOIN matches m ON m.id=b.match_id WHERE player_id=:p AND '+TF+(' AND CASE WHEN b.innings_number=1 THEN m.team2 ELSE m.team1 END=:team' if team else '')+' ORDER BY m.date,m.id '+C,{'p':pid,'team':team,'tour':tournament})
  for b in p['bowling_history']:b['overs']=overs(b['balls'])
  insights=[]
  if p['innings']<3:insights.append(f"Only {p['innings']} batting innings covered. This is too little to infer a stable weakness or form trend.")
  if p['runs'] and p['boundary_run_pct'] is not None:insights.append(f"{p['boundary_run_pct']}% of recorded batting runs came from fours and sixes. This measures scoring composition, not shot placement.")
  if pid=='32722355':insights.append('In the imported 3 Oct match you scored 0 from 4 balls, caught off Rajesh Kharche. The scorecard does not show line, length or shot selection. A technical diagnosis needs video or ball events.')
  if p['bowling_balls']:insights.append(f"Recorded bowling: {p['wickets']} wickets from {overs(p['bowling_balls'])} overs, economy {p['economy']}. Compare opponents and match conditions before drawing conclusions.")
- p['insights']=insights;p['source_url']=f'https://cricheroes.com/player-profile/{pid}/'+p['name'].lower().replace(' ','-')+'/matches'
+ p['insights']=insights
+ # Only provider-identified players have a CricHeroes profile; PDF-created players do not.
+ p['source_url']=f'https://cricheroes.com/player-profile/{pid}/'+p['name'].lower().replace(' ','-')+'/matches' if p.get('provider')=='cricheroes' else None
  return p
 
-def summary(db,team=None):
- ms=match_list(db,team);ps=players(db,team);ts=teams(db)
+def summary(db,team=None,tournament=None):
+ ms=match_list(db,team,tournament);ps=players(db,team,tournament);ts=teams(db,tournament)
  runs=sum(i['runs'] for m in ms for i in m['innings'] if not team or i['team_id']==team)
- return dict(teams=ts,completed=len(ms),recorded_runs=runs,batting_players=len([p for p in ps if p['innings']]),roster_entries=db.execute(text('SELECT count(*) FROM roster_entries')).scalar_one(),matches=ms,batting_leaders=sorted(ps,key=lambda p:(-p['runs'],p['name']))[:5],bowling_leaders=sorted([p for p in ps if p['bowling_balls']],key=lambda p:(-p['wickets'],p['economy']))[:5],coverage=dict(retrieved_at='2026-10-07',completed_scorecards=db.execute(text('SELECT count(*) FROM matches')).scalar_one(),rosters='Public club listings; not confirmed tournament squads',ball_by_ball=False,live_sync=False))
+ return dict(teams=ts,completed=len(ms),recorded_runs=runs,batting_players=len([p for p in ps if p['innings']]),roster_entries=db.execute(text('SELECT count(*) FROM roster_entries')).scalar_one(),matches=ms,batting_leaders=sorted(ps,key=lambda p:(-p['runs'],p['name']))[:5],bowling_leaders=sorted([p for p in ps if p['bowling_balls']],key=lambda p:(-p['wickets'],p['economy']))[:5],coverage=coverage(db))
+
+def tournaments(db):
+ return records(db,'SELECT tr.id,tr.provider,tr.external_id,tr.name,tr.slug,tr.overs_per_innings,tr.max_overs_per_bowler,count(m.id) matches,min(m.date) first_match,max(m.date) last_match FROM tournaments tr LEFT JOIN matches m ON m.tournament_id=tr.id GROUP BY tr.id ORDER BY tr.name '+C)
+
+def coverage(db):
+ return dict(completed_scorecards=db.execute(text('SELECT count(*) FROM matches')).scalar_one(),tournaments=tournaments(db),rosters='Public club listings; not confirmed tournament squads',ball_by_ball=False,live_sync=False)
 
 def coach(db,pid,question):
  p=profile(db,pid)

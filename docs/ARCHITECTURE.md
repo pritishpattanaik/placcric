@@ -16,7 +16,9 @@ app/api/routes.py  JSON API (/api/…)
 app/api/security.py  JSON body guard (2 MB, application/json, Origin check), session, CSRF
 app/auth/pin.py    interim PIN auth (removed in M2; Google OIDC planned in app/auth/)
 app/analytics.py   aggregates, profiles, match views, deterministic coaching
-app/ingestion/scorecards.py  validation, atomic import, idempotent seed
+app/ingestion/  records.py (provider-neutral records, rule checks, publish + revisions, diffs)
+                 cricheroes_pdf.py (scorecard PDF reader) · staging.py (upload → preview → approve)
+                 scorecards.py (JSON bundles, bundled tournament, seed)
    ▼
 PostgreSQL  ◄── migrations/ (Alembic; the only way the schema is created or changed)
 ```
@@ -46,6 +48,27 @@ Supporting modules: `app/config.py` (environment and `.env`), `app/db.py` (engin
 | `notes` | `team_id` | captain notes, `updated_at` timestamptz |
 | `import_log` | `id` | time, match count, source, SHA-256 content hash |
 | `pin_credentials`, `auth_sessions`, `login_attempts` | | interim auth; dropped in M2 |
+| `tournaments` (0002) | `id` | provider + external ID, name, link slug, overs per innings, max overs per bowler |
+| `matches.tournament_id`, `matches.stage` (0002) | | every match belongs to one tournament; stage as given by the source |
+| `import_batches` (0002) | `id` | uploaded file metadata, private raw file name (SHA-256), parsed records (JSONB), status staged/approved/rejected, reviewer |
+| `match_revisions` (0002) | `(match_id, number)` | every published version of a match as JSONB with a score hash; the scorecard tables hold the latest |
+| `player_aliases` (0002) | `(team_id, alias_key)` | admin-confirmed scorecard names → player |
+
+## Import flow
+
+```
+upload (PDF ≤10 MB / JSON ≤2 MB, admin + CSRF)
+  → raw file stored privately as uploads/<sha256>.<ext> (0600)
+  → parse: cricheroes_pdf.parse() or scorecards.bundle_to_records() → records (names, maybe no IDs)
+  → import_batches row (status staged)
+preview (computed on demand): check_record() against the tournament's rules, identities() per team,
+  diff() against the published match, unchanged/new/correction
+approve (one transaction, row lock): apply identity decisions (link / new player / CricHeroes ID),
+  store aliases, re-check with IDs, publish() changed records + revision, import_log, status approved
+restore: publish an old revision's content as a new revision
+```
+
+Player identity is never inferred from names: aliases exist only after an admin approves them, and they are scoped to a team.
 
 ## Security boundary
 
@@ -58,5 +81,5 @@ Loopback binding by default; exact Host allowlist (default `localhost:PORT`, `12
 ## Planned
 
 - `app/auth/oidc.py` and role/allowlist tables (M2).
-- Staging, revisions and private raw-upload storage under `app/ingestion/` (M3).
+- CSV templates, points table, storage of PDF extras (maidens, fall of wickets) (M3 remainder).
 - Remaining M5 items: manual acceptance checklist, restore drills, monitoring.

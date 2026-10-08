@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 from app.auth import pin
-from app.ingestion.scorecards import BUNDLED_SCORECARDS
 from app.main import create_app
 from tests.pg import PostgresTestCase
 
@@ -109,11 +108,11 @@ class HttpTests(PostgresTestCase):
                              headers={'X-CSRF-Token': csrf, 'Origin': 'http://evil.example'})
         self.assertEqual(r.status_code, 403)
         big = json.dumps({'body': 'x' * 2_000_001})
-        r = self.client.post('/api/import', content=big, headers={'Content-Type': 'application/json', 'X-CSRF-Token': csrf})
+        r = self.client.post('/api/notes', content=big, headers={'Content-Type': 'application/json', 'X-CSRF-Token': csrf})
         self.assertEqual(r.status_code, 413)
-        r = self.client.post('/api/import', content='[1]', headers={'Content-Type': 'application/json', 'X-CSRF-Token': csrf})
+        r = self.client.post('/api/notes', content='[1]', headers={'Content-Type': 'application/json', 'X-CSRF-Token': csrf})
         self.assertEqual((r.status_code, r.json()['error']), (400, 'JSON object required'))
-        r = self.client.post('/api/import', content='{bad', headers={'Content-Type': 'application/json', 'X-CSRF-Token': csrf})
+        r = self.client.post('/api/notes', content='{bad', headers={'Content-Type': 'application/json', 'X-CSRF-Token': csrf})
         self.assertEqual(r.status_code, 400)
         self.assertEqual(self.post('/api/notes', {'team': 1, 'body': 'x'}, 'wrong').status_code, 403)
 
@@ -145,20 +144,6 @@ class HttpTests(PostgresTestCase):
         self.assertEqual(m['innings'][0]['overs'], '25.0')
         self.assertIsInstance(m['innings'][0]['balls'], int)
         self.assertEqual(self.client.get('/api/rosters?q=pattanaik').json()[0]['name'], 'Pritish Pattanaik')
-
-    def test_import_requires_auth_and_csrf_and_is_atomic(self):
-        b = json.loads(BUNDLED_SCORECARDS.read_text())
-        self.assertEqual(self.client.post('/api/import', json=b).status_code, 401)
-        csrf = self.login()
-        self.assertEqual(self.client.post('/api/import', json=b).status_code, 403)
-        b['matches'][0]['innings'][0]['runs'] += 1
-        r = self.post('/api/import', b, csrf)
-        self.assertEqual((r.status_code, r.json()['error']), (400, 'Batting runs plus extras do not reconcile'))
-        b['matches'][0]['innings'][0]['runs'] -= 1
-        self.assertEqual(self.post('/api/import', b, csrf).json(), {'imported': 5})
-        self.assertEqual(self.client.get('/api/summary').json()['recorded_runs'], 1923)
-        data = self.client.get('/api/data').json()
-        self.assertEqual([i['source'] for i in data['imports']], ['User-supplied scorecard JSON', 'Bundled public scorecard snapshot'])
 
     def test_coach_is_deterministic(self):
         csrf = self.login()

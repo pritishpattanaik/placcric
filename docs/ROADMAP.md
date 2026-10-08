@@ -6,8 +6,8 @@ One milestone per branch and pull request. Each PR reports changes, test results
 | --- | --- |
 | M1 — PostgreSQL | **Implemented** (pending review) |
 | M2 — Google login and access control | Planned; needs Google OAuth client credentials from the owner for the live check |
-| M3 — Reliable match ingestion | Planned |
-| CricHeroes adapter | Blocked until an authorised export/integration is confirmed or a sample export is supplied |
+| M3 — Reliable match ingestion | **Core implemented** (pending review): tournaments, staged PDF/JSON imports, identity review, revisions/restore. CSV templates and points table remain |
+| CricHeroes adapter | **PDF adapter implemented** for the per-match “Download Scorecard” file. No API/bulk export confirmed; automated fetching not built (robots.txt/terms unchecked) |
 | M4 — UI and analytics | Planned |
 | M5 — Release readiness | Partly delivered early: Docker Compose stack, dev/stage/prod workflow, deploy/backup/restore scripts, CI, HTTPS profile, health/readiness. Public exposure waits for M2 |
 | Optional LLM coaching | Future, separate; explicit cost and privacy controls required |
@@ -51,6 +51,25 @@ Limitations: authentication is still the interim single PIN; import staging and 
 Acceptance: no private data reachable without an allowlisted, verified Google identity; each role's permissions are tested; live Google sign-in marked pending until the owner supplies credentials and confirms it.
 
 ## M3 — Reliable match ingestion
+
+### Delivered (migration 0002)
+
+- `tournaments` with per-tournament overs per innings and per bowler; matches belong to a tournament and keep the source's stage name (e.g. "Semi Final"). Existing matches are assigned to tournament 2194193 by the migration. Analytics and the UI have a tournament filter.
+- Staged imports (`import_batches`): upload a CricHeroes scorecard PDF or JSON bundle → private raw file (SHA-256 name, mode 0600, size limits 10 MB/2 MB) → preview with source, match IDs, innings totals, errors, warnings, field-level changes, and player identities → admin approve or reject. Nothing is published before approval; approval is one transaction.
+- CricHeroes PDF reader: deterministic text-layer parsing (pypdf), every row reconciled; unreadable rows are errors. Squad cross-check warnings.
+- Player identity: PDF names are resolved per team through admin-confirmed aliases (`player_aliases`). Similar names (same team, or an exact match at another club) are suggestions that require an explicit choice; nothing is merged automatically. New players get an internal ID (`pc-…`, provider `placcric`) or a CricHeroes ID typed by the admin.
+- Revisions (`match_revisions`): every publish stores the full record; identical re-imports are no-ops (hash of scores, excluding names and retrieval time); corrections create revisions with a field diff; restore republishes an old revision as a new one. Data published before revisions gets a baseline revision on first correction.
+- Ties, no-results and super overs are rejected explicitly.
+
+### Remaining
+
+- Documented CSV templates (deferred: PDFs are the chosen route).
+- Points table, after the competition's rules for ties, abandoned matches, NRR and DLS are confirmed.
+- Storing maidens, fall of wickets, minutes, squads and match officials (parsed from PDFs but not yet stored).
+- Reviewer identity is "workspace PIN user" until Google accounts (M2).
+- Merging two player records created by mistake (today: link correctly at review time).
+
+### Original scope
 
 - Reviewed JSON imports and documented, versioned CSV templates (matches, innings, batting, bowling) with row-level errors.
 - Stage imports before committing; the preview shows source, match IDs, innings totals, validation errors, identity ambiguities and field-level changes to existing matches.

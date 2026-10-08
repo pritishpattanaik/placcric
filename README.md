@@ -11,9 +11,12 @@ PlacCric is a Python backend (FastAPI, SQLAlchemy 2, Alembic) using **PostgreSQL
 | Implemented now | Planned (not yet implemented) |
 | --- | --- |
 | PostgreSQL persistence with versioned Alembic migrations (M1) | Google OpenID Connect sign-in, invite allowlist and roles (M2) |
-| Explicit, idempotent seed command; startup never seeds or resets data (M1) | Staged imports with preview, admin approval, revisions and restore (M3) |
-| One-time, verified SQLite → PostgreSQL migration with dry run (M1) | Documented CSV templates for scorer-supplied records (M3) |
-| Validated JSON scorecard imports, applied atomically | UI accessibility/mobile regression testing and coverage display (M4) |
+| Explicit, idempotent seed command; startup never seeds or resets data (M1) | Documented CSV templates for scorer-supplied records |
+| One-time, verified SQLite → PostgreSQL migration with dry run (M1) | Points table (needs your competition rules for ties, NRR and DLS) |
+| **Several tournaments** with their own overs limits (e.g. T25 and T20), and a tournament filter | Admin/captain/player roles (M2); today the PIN user is the admin |
+| **Staged imports**: upload → preview (totals, checks, changes, player identities) → approve or reject | Storing maidens, fall of wickets and minutes from PDFs (read but not stored yet) |
+| **CricHeroes scorecard PDF reader** (the “Download Scorecard” file) and scorecard JSON | UI accessibility/mobile regression testing beyond the checks listed in the PR (M4) |
+| Match revisions with restore; identical re-imports change nothing | |
 | Dashboard, match centre, player profiles, team filters, comparison, captain notes | Production configuration, HTTPS, trusted hosts and backup tooling (M5) |
 | Deterministic, evidence-based coaching rules (no LLM) | CricHeroes adapter — blocked until an authorised export or integration is confirmed |
 | **Interim** single-user PIN login (hashed PIN, server sessions, CSRF, throttling) | PIN login is removed when Google sign-in lands in M2 |
@@ -167,7 +170,7 @@ python3 server.py --port 8000
 
 ## Backup and restore (PostgreSQL)
 
-Backups contain captain notes and, until M2, the PIN hash and session digests. Keep them private and outside the repository.
+Backups contain captain notes and, until M2, the PIN hash and session digests. Keep them private and outside the repository. Uploaded scorecard files are not in the database: back up the `uploads/` folder too (with Docker, see docs/DEPLOYMENT.md).
 
 ```bash
 mkdir -p ~/placcric-backups
@@ -193,7 +196,10 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full description.
 - `app/api/` — JSON API routes and request guards (JSON size limit, origin check, session and CSRF).
 - `app/auth/pin.py` — interim PIN authentication (removed in M2).
 - `app/models.py` — SQLAlchemy models; `migrations/` — Alembic migrations (the only way the schema is created).
-- `app/ingestion/scorecards.py` — scorecard validation, atomic import and idempotent seed.
+- `app/ingestion/records.py` — provider-neutral match records: checks against tournament rules, publishing with revisions, diffs.
+- `app/ingestion/cricheroes_pdf.py` — reader for CricHeroes “Download Scorecard” PDFs (pypdf, no OCR).
+- `app/ingestion/staging.py` — upload → preview → approve/reject, player identity decisions, restore.
+- `app/ingestion/scorecards.py` — JSON bundle format, bundled tournament and idempotent seed.
 - `app/analytics.py` — aggregates, profiles, match views and deterministic coaching rules.
 - `app/sqlite_migration.py` — one-time SQLite import with verification.
 - `app/config.py` — environment configuration (`DATABASE_URL`, `PLACCRIC_ENV`), optional `.env` loading, password redaction.
@@ -215,24 +221,33 @@ By default the server binds to `127.0.0.1`; in containers it binds inside the co
 
 **No scheduled crawler, no polling and no CricHeroes requests during dashboard use.** All analytics read the local PostgreSQL database.
 
-1. Ask the scorer or tournament organiser for the finalized scorecard after each match.
-2. Convert it into the JSON format below, keeping the original source URL and match ID.
-3. Upload it on the **Data & imports** screen. The importer validates the whole file first and writes it atomically; a staged preview and admin approval step is planned for M3.
-4. Correct a match by importing the same match ID again. Its scores are replaced in one transaction; statistics are not duplicated. Each import is logged with a SHA-256 content hash.
+### Importing a match from a CricHeroes PDF
 
-You have CricHeroes Pro, but no official documentation reviewed so far shows that Pro (or organiser access) includes an API or a bulk data export. See [docs/DATA_INGESTION.md](docs/DATA_INGESTION.md#cricheroes-pro-what-is-confirmed). If you can obtain an export file, share a sample and an adapter can be built with fixtures and reconciliation tests.
+1. When a match is **completed**, open its scorecard on CricHeroes and use **Download Scorecard**. You get `Scorecard_<matchid>.pdf`.
+2. In PlacCric open **Data & imports**. If the tournament is new, use **Add a tournament** (name, CricHeroes tournament ID, overs per innings, max overs per bowler).
+3. Under **Upload a scorecard**, choose the PDF and the tournament. The match ID is filled in from the file name; optionally paste the scorecard link. Click **Upload & review**.
+4. The **review** page shows the match, both innings, every check and any warnings (for example a batter missing from the listed squad). Nothing is published yet.
+5. **Players**: the PDF has names but no CricHeroes IDs. Names you confirmed before are recognised automatically (per team). New names default to *New player*. When a similar existing player is found (for example the same name at another club), you must choose: *Same as …* or *New player*. You can also type a player's CricHeroes ID.
+6. Click **Approve & publish** (or **Reject**). Approval publishes in one transaction and records a revision.
+7. To correct a match, upload the corrected file: the review lists each changed field. Uploading the same scores again changes nothing. Each match page has a **Revision history** with **Restore**.
+
+The original files are kept privately on the server (in `uploads/`, or the `uploads` Docker volume) under their SHA-256 name with owner-only permissions. They are never served or committed.
+
+JSON bundles in the format below go through the same review and approval.
+
+You have CricHeroes Pro. No official documentation reviewed shows an API or bulk export; the per-match PDF is the confirmed export. See [docs/DATA_INGESTION.md](docs/DATA_INGESTION.md#cricheroes-pro-what-is-confirmed).
 
 ### Current JSON import contract
 
 Use `data/scorecards.json` as the executable example. A bundle contains a `matches` array of 1–100 matches and an optional `retrieved_at`. Each match contains a numeric string `id`, `source_url`, ISO date, venue, two ordered teams, winner, result and two innings. Batting rows use player ID/name, runs, balls, fours, sixes, dismissal and a not-out flag. Bowling rows use player ID/name, overs, runs, wickets, dots, wides and no-balls.
 
-Current restrictions: CricHeroes scorecard URLs for this tournament; exactly two innings; a winner matching one team; at most 25 overs per innings and five per bowler. **Ties, no-results, super overs, other providers and other competition rules are not supported** and are rejected rather than forced into a misleading winner record.
+Current restrictions: if a source link is given it must be this match's CricHeroes scorecard (and the tournament's link name, when set); exactly two innings; a winner matching one team; the tournament's overs per innings and per bowler. **Ties, no-results, super overs, other providers and other competition rules are not supported** and are rejected rather than forced into a misleading winner record.
 
-Overs use cricket notation: `22.3` means 135 balls, not 22.3 decimal overs. Internally overs are stored as integer legal balls. Batting runs plus extras, and bowling legal balls, must reconcile with innings totals. Failed validation leaves stored scores unchanged.
+Overs use cricket notation: `22.3` means 135 balls, not 22.3 decimal overs. Internally overs are stored as integer legal balls. Batting runs plus extras, and bowling legal balls, must reconcile with innings totals (errors block approval). Extras breakdowns, bowler runs versus byes/leg byes, and dismissals versus wickets are checked as warnings. Failed validation leaves stored scores unchanged.
 
 ### Statistical scope
 
-All aggregates cover imported matches and the active team filter. Batting average is runs divided by dismissals; with zero dismissals it is undefined and shown as a dash. Strike rate is runs per 100 balls. Bowling economy is runs conceded per six legal balls. Zero-ball, zero-run not-out listings do not count as batting innings. No ball-by-ball data exists, so phase splits, wagon wheels, pace/spin analysis and predictive win probabilities are not shown. DLS results are not used to infer a standard NRR table.
+All aggregates cover imported matches and the active tournament and team filters. Batting average is runs divided by dismissals; with zero dismissals it is undefined and shown as a dash. Strike rate is runs per 100 balls. Bowling economy is runs conceded per six legal balls. Zero-ball, zero-run not-out listings do not count as batting innings. No ball-by-ball data exists, so phase splits, wagon wheels, pace/spin analysis and predictive win probabilities are not shown. DLS results are not used to infer a standard NRR table.
 
 ## Tests
 
@@ -250,6 +265,8 @@ docker compose --profile test run --rm --build tests
 ```
 
 Without `TEST_DATABASE_URL` the PostgreSQL tests are reported as skipped; set `PLACCRIC_REQUIRE_PG=1` to make that an error. The tests refuse to run against a database whose name does not end in `_test` or that matches `DATABASE_URL`.
+
+PDF tests use a synthetic scorecard with invented players (`tests/pdf_fixture.py`). Real downloads contain third-party personal data, so they are not committed; to check one locally run `PLACCRIC_REAL_SCORECARD_PDF=/path/Scorecard_123.pdf python3 -m unittest tests.test_pdf`.
 
 ## Develop with Claude Code in the cloud
 

@@ -16,6 +16,7 @@ from urllib.parse import quote
 
 from sqlalchemy import text
 
+from .ingestion.scorecards import ensure_tournament
 from .models import CRICKET_TABLES
 
 # (table, columns in copy order, boolean columns, primary key for deterministic ordering)
@@ -182,10 +183,15 @@ def migrate(sqlite_path, engine, database_url, dry_run=False):
         if occupied:
             raise MigrationError('Target PostgreSQL database already contains data in: ' + ', '.join(occupied) +
                                  '. Migrate into a freshly upgraded, unseeded database.')
+        # Every legacy match belongs to the bundled tournament (schema user_version 1 had no tournaments).
+        tournament_id = ensure_tournament(conn)['id']
         for table, columns, _, _ in TABLES:
             if source_rows[table]:
-                conn.execute(text(f'INSERT INTO {table} ({", ".join(columns)}) VALUES ({", ".join(":" + c for c in columns)})'),
-                             source_rows[table])
+                rows, cols = source_rows[table], columns
+                if table == 'matches':
+                    rows, cols = [dict(r, tournament_id=tournament_id) for r in rows], columns + ['tournament_id']
+                conn.execute(text(f'INSERT INTO {table} ({", ".join(cols)}) VALUES ({", ".join(":" + c for c in cols)})'),
+                             rows)
         for table, column in SEQUENCES.items():
             conn.execute(text(f"SELECT setval(pg_get_serial_sequence('{table}', '{column}'), "
                               f"COALESCE((SELECT max({column}) FROM {table}), 0) + 1, false)"))

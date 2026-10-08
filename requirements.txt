@@ -5,5 +5,7 @@ uvicorn==0.53.0
 SQLAlchemy==2.0.54
 alembic==1.16.5
 psycopg[binary]==3.2.13
+# Reads CricHeroes scorecard PDFs (pure Python, no system packages).
+pypdf==6.17.0
 # Test client for the HTTP tests.
 httpx==0.28.1
